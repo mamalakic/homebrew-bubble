@@ -34,13 +34,12 @@ repositories {
 
 android {
     //compileSdk = 36
-    /*
     compileSdk {
         version = release(36) {
             it.minorApiLevel = 1
         }
-    }*/
-    compileSdkPreview "CANARY"
+    }
+    //compileSdkPreview "CANARY"
     //buildToolsVersion '28.0.3'
 
     defaultConfig {
