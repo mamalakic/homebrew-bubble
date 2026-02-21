@@ -54,12 +54,7 @@ public class RarParser extends AbstractParser {
             header = mArchive.nextFileHeader();
         }
 
-        Collections.sort(mHeaders, new IgnoreCaseComparator() {
-            @Override
-            public String stringValue(Object o) {
-                return getName((FileHeader) o);
-            }
-        });
+        Collections.sort(mHeaders, IgnoreCaseComparator.forFunction(this::getName));
     }
 
     private String getName(FileHeader header) {
@@ -132,9 +127,7 @@ public class RarParser extends AbstractParser {
     @Override
     public Map getPageMetaData(int num) throws IOException {
         parse();
-        Map m = new HashMap();
-        m.put(Parser.PAGEMETADATA_KEY_NAME,mHeaders.get(num).getFileName());
-        return m;
+        return createPageMetaDataWithName(mHeaders.get(num).getFileName());
     }
 
     @Override

@@ -7,10 +7,25 @@
           app:showAsAction="always"
           app:actionViewClass="androidx.appcompat.widget.SearchView"/>
 
-    <item android:id="@+id/menu_browser_refresh"
-          android:title="@string/reload"
-          android:icon="@drawable/ic_refresh_24"
-          app:showAsAction="always">
+    <item android:id="@+id/menu_browser_filter"
+          android:title="@string/menu_browser_filter"
+          android:icon="@drawable/ic_filter_list_white_24dp"
+          app:showAsAction="ifRoom">
+        <menu>
+            <group android:checkableBehavior="single">
+                <item android:id="@+id/menu_browser_filter_all"
+                      android:title="@string/menu_browser_filter_all"
+                      android:checked="true"/>
+                <item android:id="@+id/menu_browser_filter_unread"
+                      android:title="@string/menu_browser_filter_unread"/>
+                <item android:id="@+id/menu_browser_filter_reading"
+                      android:title="@string/menu_browser_filter_reading"/>
+                <item android:id="@+id/menu_browser_filter_unfinished"
+                      android:title="@string/menu_browser_filter_unfinished"/>
+                <item android:id="@+id/menu_browser_filter_read"
+                      android:title="@string/menu_browser_filter_read"/>
+            </group>
+        </menu>
     </item>
     <item android:id="@+id/sort"
           android:title="@string/menu_sort_by"
@@ -41,25 +56,5 @@
                       android:title="Size ↥"/>
             </group>
         </menu-->
-    </item>
-    <item android:id="@+id/menu_browser_filter"
-          android:title="@string/menu_browser_filter"
-          android:icon="@drawable/ic_filter_list_white_24dp"
-          app:showAsAction="ifRoom">
-        <menu>
-            <group android:checkableBehavior="single">
-                <item android:id="@+id/menu_browser_filter_all"
-                      android:title="@string/menu_browser_filter_all"
-                      android:checked="true"/>
-                <item android:id="@+id/menu_browser_filter_unread"
-                      android:title="@string/menu_browser_filter_unread"/>
-                <item android:id="@+id/menu_browser_filter_reading"
-                      android:title="@string/menu_browser_filter_reading"/>
-                <item android:id="@+id/menu_browser_filter_unfinished"
-                      android:title="@string/menu_browser_filter_unfinished"/>
-                <item android:id="@+id/menu_browser_filter_read"
-                      android:title="@string/menu_browser_filter_read"/>
-            </group>
-        </menu>
     </item>
 </menu>

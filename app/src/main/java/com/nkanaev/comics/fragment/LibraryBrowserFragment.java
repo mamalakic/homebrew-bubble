@@ -60,14 +60,9 @@ public class LibraryBrowserFragment extends Fragment
     public static final String PARAM_PATH = "browserCurrentPath";
 
     final int ITEM_VIEW_TYPE_COMIC = -1;
-    final int ITEM_VIEW_TYPE_HEADER_RECENT = -2;
-    final int ITEM_VIEW_TYPE_HEADER_ALL = -3;
-
-    final int NUM_HEADERS = 2;
 
     private List<Comic> mComics = new ArrayList<>();
     private List<Comic> mAllItems = new ArrayList<>();
-    private List<Comic> mRecentItems = new ArrayList<>();
 
     private String mPath;
     private Picasso mPicasso;
@@ -78,7 +73,6 @@ public class LibraryBrowserFragment extends Fragment
     private RecyclerView mComicListView;
     private SwipeRefreshLayout mRefreshLayout;
     private Handler mUpdateHandler = new LibraryFragment.UpdateHandler(this);
-    private MenuItem mRefreshItem;
     //private Long mCacheStamp = Long.valueOf(System.currentTimeMillis());
     //private HashMap<Uri, Long> mCache = new HashMap();
 
@@ -149,6 +143,13 @@ public class LibraryBrowserFragment extends Fragment
         ((MainActivity) getActivity()).setSubTitle(Utils.appendSlashIfMissing(path.getPath()));
         mPicasso = ((MainActivity) getActivity()).getPicasso();
 
+        // Disable title area click listener from library view
+        View titleContainer = getActivity().findViewById(R.id.action_bar_title_container);
+        if (titleContainer != null) {
+            titleContainer.setOnClickListener(null);
+            titleContainer.setClickable(false);
+        }
+
         return view;
     }
 
@@ -198,45 +199,6 @@ public class LibraryBrowserFragment extends Fragment
 
         super.onCreateOptionsMenu(menu, inflater);
 
-        // memorize refresh item
-        mRefreshItem = menu.findItem(R.id.menu_browser_refresh);
-        // show=always is precondition to have an ActionView
-        mRefreshItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        final int mRefreshItemId = mRefreshItem.getItemId();
-        View mRefreshItemActionView = mRefreshItem.getActionView();
-
-        final View.OnLongClickListener toolbarItemLongClicked = new View.OnLongClickListener() {
-            int counter;
-
-            @Override
-            public boolean onLongClick(View view) {
-                onRefresh(true);
-                // return false so tooltip is shown
-                return false;
-            }
-        };
-
-        // attach longclicklistener after itemview is created
-        final androidx.appcompat.widget.Toolbar toolbar = ((MainActivity) getActivity()).getToolbar();
-        if (mRefreshItemActionView == null)
-            toolbar.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-                @Override
-                public void onLayoutChange(View view, int i, int i1, int i2, int i3, int i4, int i5, int i6, int i7) {
-                    if (view.getId() == toolbar.getId()) {
-                        View itemView = view.findViewById(mRefreshItemId);
-                        if (itemView != null) {
-                            itemView.setOnLongClickListener(toolbarItemLongClicked);
-                            view.removeOnLayoutChangeListener(this);
-                        }
-                    }
-                }
-            });
-        else
-            mRefreshItemActionView.setOnLongClickListener(toolbarItemLongClicked);
-
-        // switch refresh icon
-        setLoading(Scanner.getInstance().isRunning());
-
         // align header title of generated sub menu right
         SpannableString title = new SpannableString(getResources().getString(R.string.menu_browser_filter));
         title.setSpan(new AlignmentSpan.Standard(Layout.Alignment.ALIGN_OPPOSITE), 0, title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -276,15 +238,6 @@ public class LibraryBrowserFragment extends Fragment
                 mFilterRead = item.getItemId();
                 filterContent();
                 refreshAdapter();
-                return true;
-            case R.id.menu_browser_refresh:
-                // if running, stop is requested
-                if (Scanner.getInstance().isRunning()) {
-                    setLoading(false);
-                    Scanner.getInstance().stop();
-                } else {
-                    onRefresh();
-                }
                 return true;
             case R.id.sort:
                 // apparently you need to implement custom layout submenus yourself
@@ -464,7 +417,8 @@ public class LibraryBrowserFragment extends Fragment
         intent.putExtra(ReaderFragment.PARAM_HANDLER, comic.getId());
         intent.putExtra(ReaderFragment.PARAM_MODE, ReaderFragment.Mode.MODE_LIBRARY);
         startActivity(intent);
-        Utils.disablePendingTransition(getActivity());
+        // Opening: fade(200, 300, 200) = fade to black 200ms, hold 300ms, fade from black 200ms
+        getActivity().overridePendingTransition(R.anim.fade_from_black_200_delay_300, R.anim.fade_to_black_200);
     }
 
     private void refreshAdapter(){
@@ -477,48 +431,9 @@ public class LibraryBrowserFragment extends Fragment
     private void getComics() {
         //mCacheStamp = Long.valueOf(System.currentTimeMillis());
         mComics = Storage.getStorage(getActivity()).listComics(mPath);
-        findRecents();
-        limitRecents( calculateNumColumns() );
         filterContent();
         sortContent();
         refreshAdapter();
-    }
-
-    private void findRecents() {
-        mRecentItems.clear();
-
-        for (Comic c : mComics) {
-            if (c.getUpdatedAt() > 0) {
-                mRecentItems.add(c);
-            }
-        }
-
-        if (mRecentItems.size() > 0) {
-            Collections.sort(mRecentItems, new Comparator<Comic>() {
-                @Override
-                public int compare(Comic lhs, Comic rhs) {
-                    return Long.compare(rhs.getUpdatedAt(), lhs.getUpdatedAt());
-                }
-            });
-        }
-    }
-
-    private void limitRecents( final int numColumns ){
-        if (mRecentItems == null || mRecentItems.isEmpty())
-            return;
-
-        // we default to 2 columns -1 unless min recent count is bigger
-        int recentsNum = 2*numColumns-1;
-        while ( Constants.MIN_RECENT_COUNT > recentsNum ) {
-            recentsNum += numColumns;
-        }
-
-        // cut to two cols max
-        if (mRecentItems.size() > recentsNum) {
-            mRecentItems
-                    .subList(recentsNum, mRecentItems.size())
-                    .clear();
-        }
     }
 
     private void filterContent() {
@@ -546,220 +461,92 @@ public class LibraryBrowserFragment extends Fragment
         if (mAllItems == null || mAllItems.isEmpty())
             return;
 
-        Comparator comparator;
+        Comparator<Comic> comparator;
         switch (mSort) {
             case R.id.sort_name_desc:
-                comparator = new IgnoreCaseComparator.Reverse() {
-                    @Override
-                    public String stringValue(Object o) {
-                        return ((Comic) o).getFile().getName();
-                    }
-                };
+                comparator = Comparator.comparing((Comic c) -> c.getFile().getName(), 
+                    String.CASE_INSENSITIVE_ORDER).reversed();
                 break;
             case R.id.sort_size_asc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        long aSize = getSize(a.getFile());
-                        long bSize = getSize(b.getFile());
-                        long diff = aSize - bSize;
-                        return diff < 0 ? -1 : (diff > 0 ? 1 : 0);
-                    }
-
-                    private long getSize(File f) {
-                        if (f == null)
-                            return 0;
-                        else if (f.isDirectory())
-                            return Utils.getFolderSize(f, false);
-
-                        return f.length();
-                    }
-                };
+                comparator = Comparator.comparingLong(c -> getComicSize(c.getFile()));
                 break;
             case R.id.sort_size_desc:
-                comparator = new Comparator<Comic>() {
-                    public int compare(Comic a, Comic b) {
-                        long aSize = getSize(b.getFile());
-                        long bSize = getSize(a.getFile());
-                        long diff = aSize - bSize;
-                        return diff < 0 ? -1 : (diff > 0 ? 1 : 0);
-                    }
-
-                    private long getSize(File f) {
-                        if (f == null)
-                            return 0;
-                        else if (f.isDirectory())
-                            return Utils.getFolderSize(f, false);
-
-                        return f.length();
-                    }
-                };
+                comparator = Comparator.comparingLong((Comic c) -> getComicSize(c.getFile())).reversed();
                 break;
             case R.id.sort_creation_asc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        long aTime = creationTime(a.getFile());
-                        long bTime = creationTime(b.getFile());
-                        return Long.compare(aTime, bTime);
-                    }
-
-                    private long creationTime(File f) {
-                        try {
-                            FileTime creationTime = (FileTime) Files.getAttribute(f.toPath(), "creationTime");
-                            return creationTime.toMillis();
-                        } catch (IOException ex) {
-                            return 0;
-                        }
-                    }
-                };
+                comparator = Comparator.comparingLong(c -> getCreationTime(c.getFile()));
                 break;
             case R.id.sort_creation_desc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        long aTime = creationTime(b.getFile());
-                        long bTime = creationTime(a.getFile());
-                        return Long.compare(aTime, bTime);
-                    }
-
-                    private long creationTime(File f) {
-                        try {
-                            FileTime creationTime = (FileTime) Files.getAttribute(f.toPath(), "creationTime");
-                            return creationTime.toMillis();
-                        } catch (IOException ex) {
-                            return 0;
-                        }
-                    }
-                };
+                comparator = Comparator.comparingLong((Comic c) -> getCreationTime(c.getFile())).reversed();
                 break;
             case R.id.sort_modified_asc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        long aTime = a.getFile().lastModified();
-                        long bTime = b.getFile().lastModified();
-                        return Long.compare(aTime, bTime);
-                    }
-                };
+                comparator = Comparator.comparingLong(c -> c.getFile().lastModified());
                 break;
             case R.id.sort_modified_desc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        long aTime = b.getFile().lastModified();
-                        long bTime = a.getFile().lastModified();
-                        return Long.compare(aTime, bTime);
-                    }
-                };
+                comparator = Comparator.comparingLong((Comic c) -> c.getFile().lastModified()).reversed();
                 break;
             case R.id.sort_pages_asc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        return a.getTotalPages() - b.getTotalPages();
-                    }
-                };
+                comparator = Comparator.comparingInt(Comic::getTotalPages);
                 break;
             case R.id.sort_pages_desc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        return b.getTotalPages() - a.getTotalPages();
-                    }
-                };
+                comparator = Comparator.comparingInt(Comic::getTotalPages).reversed();
                 break;
             case R.id.sort_pages_read_asc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        return a.getCurrentPage() - b.getCurrentPage();
-                    }
-                };
+                comparator = Comparator.comparingInt(Comic::getCurrentPage);
                 break;
             case R.id.sort_pages_read_desc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        return b.getCurrentPage() - a.getCurrentPage();
-                    }
-                };
+                comparator = Comparator.comparingInt(Comic::getCurrentPage).reversed();
                 break;
             case R.id.sort_pages_left_asc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        return (a.getTotalPages() - a.getCurrentPage()) -
-                                (b.getTotalPages() - b.getCurrentPage());
-                    }
-                };
+                comparator = Comparator.comparingInt(c -> c.getTotalPages() - c.getCurrentPage());
                 break;
             case R.id.sort_pages_left_desc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        return (b.getTotalPages() - b.getCurrentPage()) -
-                                (a.getTotalPages() - a.getCurrentPage());
-                    }
-                };
+                comparator = Comparator.comparingInt((Comic c) -> c.getTotalPages() - c.getCurrentPage()).reversed();
                 break;
             case R.id.sort_access_asc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        return Long.compare(a.getUpdatedAt(), b.getUpdatedAt());
-                    }
-                };
+                comparator = Comparator.comparingLong(Comic::getUpdatedAt);
                 break;
             case R.id.sort_access_desc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        return Long.compare(b.getUpdatedAt(), a.getUpdatedAt());
-                    }
-                };
+                comparator = Comparator.comparingLong(Comic::getUpdatedAt).reversed();
                 break;
             default:
-                comparator = new IgnoreCaseComparator() {
-                    @Override
-                    public String stringValue(Object o) {
-                        return ((Comic) o).getFile().getName();
-                    }
-                };
+                comparator = Comparator.comparing((Comic c) -> c.getFile().getName(), 
+                    String.CASE_INSENSITIVE_ORDER);
                 break;
         }
 
         Collections.sort(mAllItems, comparator);
     }
 
-    private Comic getComicAtPosition(int position) {
-        Comic comic;
-        if (hasRecent()) {
-            if (position > 0 && position < mRecentItems.size() + 1)
-                comic = mRecentItems.get(position - 1);
-            else
-                comic = mAllItems.get(position - mRecentItems.size() - NUM_HEADERS);
-        } else {
-            comic = mAllItems.get(position);
+    /**
+     * Helper method to get comic size - eliminates duplication.
+     */
+    private long getComicSize(File f) {
+        if (f == null)
+            return 0;
+        else if (f.isDirectory())
+            return Utils.getFolderSize(f, false);
+        return f.length();
+    }
+
+    /**
+     * Helper method to get creation time - eliminates duplication.
+     */
+    private long getCreationTime(File f) {
+        try {
+            FileTime creationTime = (FileTime) Files.getAttribute(f.toPath(), "creationTime");
+            return creationTime.toMillis();
+        } catch (IOException ex) {
+            return 0;
         }
-        return comic;
+    }
+
+    private Comic getComicAtPosition(int position) {
+        return mAllItems.get(position);
     }
 
     private int getItemViewTypeAtPosition(int position) {
-        if (hasRecent()) {
-            if (position == 0)
-                return ITEM_VIEW_TYPE_HEADER_RECENT;
-            else if (position == mRecentItems.size() + 1)
-                return ITEM_VIEW_TYPE_HEADER_ALL;
-        }
         return ITEM_VIEW_TYPE_COMIC;
-    }
-
-    private boolean hasRecent() {
-        return mFilterSearch.length() == 0
-                && mFilterRead == R.id.menu_browser_filter_all
-                && mSort != R.id.sort_access_desc
-                && mRecentItems.size() > 0;
     }
 
     private int calculateNumColumns() {
@@ -771,14 +558,10 @@ public class LibraryBrowserFragment extends Fragment
     }
 
     private GridLayoutManager.SpanSizeLookup createSpanSizeLookup() {
-        final int numColumns = calculateNumColumns();
-
         return new GridLayoutManager.SpanSizeLookup() {
             @Override
             public int getSpanSize(int position) {
-                if (getItemViewTypeAtPosition(position) == ITEM_VIEW_TYPE_COMIC)
-                    return 1;
-                return numColumns;
+                return 1;
             }
         };
     }
@@ -790,8 +573,6 @@ public class LibraryBrowserFragment extends Fragment
 
     private void onRefresh(boolean refreshAll) {
         setLoading(true);
-        String msg = getResources().getString( refreshAll ? R.string.reload_msg_slow : R.string.reload_msg_fast );
-        Toast.makeText(getActivity(), msg, Toast.LENGTH_SHORT).show();
         Scanner.getInstance().scanLibrary(new File(mPath), refreshAll);
     }
 
@@ -806,11 +587,7 @@ public class LibraryBrowserFragment extends Fragment
     private void setLoading(boolean isLoading) {
         if (isLoading) {
             mRefreshLayout.setRefreshing(true);
-            if (mRefreshItem != null)
-                mRefreshItem.setIcon(ContextCompat.getDrawable(getContext(), R.drawable.ic_refresh_stop_24));
         } else {
-            if (mRefreshItem != null)
-                mRefreshItem.setIcon(ContextCompat.getDrawable(getContext(), R.drawable.ic_refresh_24));
             mRefreshLayout.setRefreshing(false);
         }
     }
@@ -827,19 +604,6 @@ public class LibraryBrowserFragment extends Fragment
         @Override
         public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
             int position = parent.getChildAdapterPosition(view);
-
-            if (hasRecent()) {
-                // those are headers
-                if (position == 0 || position == mRecentItems.size() + 1)
-                    return;
-
-                if (position > 0 && position < mRecentItems.size() + 1) {
-                    position -= 1;
-                } else {
-                    position -= (NUM_HEADERS + mRecentItems.size());
-                }
-            }
-
             int column = position % mSpanCount;
 
             outRect.left = mSpacing - column * mSpacing / mSpanCount;
@@ -863,9 +627,6 @@ public class LibraryBrowserFragment extends Fragment
 
         @Override
         public int getItemCount() {
-            if (hasRecent()) {
-                return mAllItems.size() + mRecentItems.size() + NUM_HEADERS;
-            }
             return mAllItems.size();
         }
 
@@ -887,25 +648,6 @@ public class LibraryBrowserFragment extends Fragment
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
             Context ctx = viewGroup.getContext();
-
-            if (i == ITEM_VIEW_TYPE_HEADER_RECENT) {
-                TextView view = (TextView) LayoutInflater.from(ctx)
-                        .inflate(R.layout.header_library, viewGroup, false);
-                view.setText(R.string.library_header_recent);
-
-                int spacing = (int) getResources().getDimension(R.dimen.grid_margin);
-                RecyclerView.LayoutParams lp = (RecyclerView.LayoutParams) view.getLayoutParams();
-                lp.setMargins(0, spacing, 0, 0);
-
-                return new HeaderViewHolder(view);
-            } else if (i == ITEM_VIEW_TYPE_HEADER_ALL) {
-                TextView view = (TextView) LayoutInflater.from(ctx)
-                        .inflate(R.layout.header_library, viewGroup, false);
-                view.setText(R.string.library_header_all);
-
-                return new HeaderViewHolder(view);
-            }
-
             View view = LayoutInflater.from(ctx)
                     .inflate(R.layout.card_comic, viewGroup, false);
             return new ComicViewHolder(view);
@@ -913,23 +655,11 @@ public class LibraryBrowserFragment extends Fragment
 
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder viewHolder, int i) {
-            if (viewHolder.getItemViewType() == ITEM_VIEW_TYPE_COMIC) {
-                Comic comic = getComicAtPosition(i);
-                ComicViewHolder holder = (ComicViewHolder) viewHolder;
-                holder.setupComic(comic);
-            }
+            Comic comic = getComicAtPosition(i);
+            ComicViewHolder holder = (ComicViewHolder) viewHolder;
+            holder.setupComic(comic);
         }
 
-    }
-
-    private class HeaderViewHolder extends RecyclerView.ViewHolder {
-        public HeaderViewHolder(View itemView) {
-            super(itemView);
-        }
-
-        public void setTitle(int titleRes) {
-            ((TextView) itemView).setText(titleRes);
-        }
     }
 
     private class ComicViewHolder extends RecyclerView.ViewHolder
@@ -939,6 +669,7 @@ public class LibraryBrowserFragment extends Fragment
         private ImageView mComicImageView;
         private TextView mTitleTextView;
         private TextView mPagesTextView;
+        private View mReadOverlay;
         private Comic mComic = null;
 
         public ComicViewHolder(View itemView) {
@@ -946,6 +677,7 @@ public class LibraryBrowserFragment extends Fragment
             mComicImageView = (ImageView) itemView.findViewById(R.id.comicImageView);
             mTitleTextView = (TextView) itemView.findViewById(R.id.comicTitleTextView);
             mPagesTextView = (TextView) itemView.findViewById(R.id.comicPagerTextView);
+            mReadOverlay = itemView.findViewById(R.id.card_comic_read_overlay);
 
             itemView.setClickable(true);
             itemView.setOnCreateContextMenuListener(this);
@@ -966,6 +698,48 @@ public class LibraryBrowserFragment extends Fragment
             mTitleTextView.setText(comic.getFile().getName());
             String totalPages = comic.getTotalPages() < 1 ? "?" : Integer.toString(comic.getTotalPages());
             mPagesTextView.setText(Integer.toString(comic.getCurrentPage()) + '/' + totalPages);
+            
+            // Show overlay and dim title for fully read comics with animation
+            boolean isFullyRead = comic.getTotalPages() > 0 && comic.getCurrentPage() >= comic.getTotalPages();
+            boolean wasVisible = mReadOverlay.getVisibility() == View.VISIBLE;
+            
+            if (isFullyRead && !wasVisible) {
+                // Fade in overlay and dim text
+                mReadOverlay.setVisibility(View.VISIBLE);
+                mReadOverlay.setAlpha(0f);
+                mReadOverlay.animate()
+                        .alpha(1f)
+                        .setDuration(300)
+                        .start();
+                mTitleTextView.animate().alpha(0.5f).setDuration(300).start();
+                mPagesTextView.animate().alpha(0.5f).setDuration(300).start();
+            } else if (!isFullyRead && wasVisible) {
+                // Fade out overlay and restore text
+                mReadOverlay.animate()
+                        .alpha(0f)
+                        .setDuration(300)
+                        .withEndAction(new Runnable() {
+                            @Override
+                            public void run() {
+                                mReadOverlay.setVisibility(View.GONE);
+                            }
+                        })
+                        .start();
+                mTitleTextView.animate().alpha(1.0f).setDuration(300).start();
+                mPagesTextView.animate().alpha(1.0f).setDuration(300).start();
+            } else if (isFullyRead) {
+                // Already read, ensure correct state without animation
+                mReadOverlay.setVisibility(View.VISIBLE);
+                mReadOverlay.setAlpha(1f);
+                mTitleTextView.setAlpha(0.5f);
+                mPagesTextView.setAlpha(0.5f);
+            } else {
+                // Not read, ensure correct state without animation
+                mReadOverlay.setVisibility(View.GONE);
+                mReadOverlay.setAlpha(0f);
+                mTitleTextView.setAlpha(1.0f);
+                mPagesTextView.setAlpha(1.0f);
+            }
         }
 
         @Override
@@ -973,6 +747,7 @@ public class LibraryBrowserFragment extends Fragment
                                         View v,
                                         ContextMenu.ContextMenuInfo menuInfo) {
             getActivity().getMenuInflater().inflate(R.menu.browser_context, menu);
+            menu.findItem(R.id.mark_as_read).setOnMenuItemClickListener(this);
             menu.findItem(R.id.reset).setOnMenuItemClickListener(this);
         }
 
@@ -981,12 +756,21 @@ public class LibraryBrowserFragment extends Fragment
             if (mComic == null)
                 return false;
 
-            // just one menu item reset just now
-            Storage.getStorage(getContext()).resetBook(mComic.getId());
-            Utils.deleteCoverCacheFile(mComic);
-            // complete reload (recents, sorting etc.)
-            getComics();
-            return true;
+            switch (item.getItemId()) {
+                case R.id.mark_as_read:
+                    Storage.getStorage(getContext()).markBookAsRead(mComic.getId());
+                    Utils.deleteCoverCacheFile(mComic);
+                    // complete reload (recents, sorting etc.)
+                    getComics();
+                    return true;
+                case R.id.reset:
+                    Storage.getStorage(getContext()).resetBook(mComic.getId());
+                    Utils.deleteCoverCacheFile(mComic);
+                    // complete reload (recents, sorting etc.)
+                    getComics();
+                    return true;
+            }
+            return false;
         }
 
         @Override

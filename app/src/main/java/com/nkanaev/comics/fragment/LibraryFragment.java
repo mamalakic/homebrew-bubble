@@ -2,7 +2,6 @@ package com.nkanaev.comics.fragment;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -25,7 +24,6 @@ import android.widget.*;
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.StyleRes;
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.view.menu.MenuBuilder;
 import androidx.appcompat.view.menu.MenuItemImpl;
 import androidx.core.app.ActivityCompat;
@@ -51,6 +49,7 @@ import com.squareup.picasso.Picasso;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -73,7 +72,6 @@ public class LibraryFragment extends Fragment
     private Picasso mPicasso;
     private boolean mIsRefreshPlanned = false;
     private Handler mUpdateHandler = new UpdateHandler(this);
-    private MenuItem mRefreshItem;
     private int mSort = R.id.sort_name_asc;
 
     public LibraryFragment() {
@@ -153,6 +151,21 @@ public class LibraryFragment extends Fragment
         if (Scanner.getInstance().isRunning()) {
             setLoading(true);
         }
+
+        // Re-enable title area click listener when returning to library view
+        View titleContainer = getActivity().findViewById(R.id.action_bar_title_container);
+        if (titleContainer != null) {
+            titleContainer.setClickable(true);
+            titleContainer.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (Scanner.getInstance().isRunning()) {
+                        Scanner.getInstance().stop();
+                    }
+                    mDirectorySelectDialog.show();
+                }
+            });
+        }
     }
 
     @Override
@@ -200,6 +213,20 @@ public class LibraryFragment extends Fragment
         String folder = getLibraryDir();
         ((MainActivity) getActivity()).setSubTitle(Utils.appendSlashIfMissing(folder));
 
+        // Make title area clickable to open directory selector
+        View titleContainer = getActivity().findViewById(R.id.action_bar_title_container);
+        if (titleContainer != null) {
+            titleContainer.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (Scanner.getInstance().isRunning()) {
+                        Scanner.getInstance().stop();
+                    }
+                    mDirectorySelectDialog.show();
+                }
+            });
+        }
+
         return view;
     }
 
@@ -214,78 +241,14 @@ public class LibraryFragment extends Fragment
         if (menu instanceof MenuBuilder) {
             ((MenuBuilder) menu).setOptionalIconsVisible(true);
         }
-
-        // memorize refresh item
-        mRefreshItem = menu.findItem(R.id.menuLibraryRefresh);
-        // show=always is precondition to have an ActionView
-        mRefreshItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        final int mRefreshItemId = mRefreshItem.getItemId();
-        View mRefreshItemActionView = mRefreshItem.getActionView();
-
-        final View.OnLongClickListener toolbarItemLongClicked = new View.OnLongClickListener() {
-            int counter;
-
-            @Override
-            public boolean onLongClick(View view) {
-                onRefresh(true);
-                // return false so tooltip is shown
-                return false;
-            }
-        };
-
-        // attach longclicklistener after itemview is created
-        final androidx.appcompat.widget.Toolbar toolbar = ((MainActivity) getActivity()).getToolbar();
-        if (mRefreshItemActionView == null)
-            toolbar.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-                @Override
-                public void onLayoutChange(View view, int i, int i1, int i2, int i3, int i4, int i5, int i6, int i7) {
-                    if (view.getId() == toolbar.getId()) {
-                        View itemView = view.findViewById(mRefreshItemId);
-                        if (itemView != null) {
-                            itemView.setOnLongClickListener(toolbarItemLongClicked);
-                            view.removeOnLayoutChangeListener(this);
-                        }
-                    }
-                }
-            });
-        else
-            mRefreshItemActionView.setOnLongClickListener(toolbarItemLongClicked);
-
-        // switch refresh icon
-        setLoading(Scanner.getInstance().isRunning());
     }
 
     @Override
     public void onPrepareOptionsMenu(@NonNull Menu menu) {
         super.onPrepareOptionsMenu(menu);
 
-        // disable refresh if no folder selected so far
-        String dir = getLibraryDir();
-        menu.findItem(R.id.menuLibraryRefresh).setVisible(!getLibraryDir().isEmpty());
+        // disable sort if no folder selected so far
         menu.findItem(R.id.menuLibrarySort).setVisible(!getLibraryDir().isEmpty());
-        // place select-folder item in overflow if already selected
-        if (!getLibraryDir().isEmpty())
-            menu.findItem(R.id.menuLibrarySetDir).setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
-
-        int mode = AppCompatDelegate.getDefaultNightMode();
-        Drawable icon;
-        int item;
-        switch(mode) {
-            case AppCompatDelegate.MODE_NIGHT_NO:
-                icon = ContextCompat.getDrawable(getContext(),R.drawable.ui_light_mode_24);
-                item = R.id.menuLibrarySetThemeDay;
-                break;
-            case AppCompatDelegate.MODE_NIGHT_YES:
-                icon = ContextCompat.getDrawable(getContext(),R.drawable.ui_dark_mode_24);
-                item = R.id.menuLibrarySetThemeNight;
-                break;
-            default:
-                icon = ContextCompat.getDrawable(getContext(),R.drawable.ui_system_mode_24);
-                item = R.id.menuLibrarySetThemeAuto;
-                break;
-        }
-        menu.findItem(R.id.menuLibrarySetTheme).setIcon(icon);
-        menu.findItem(item).setChecked(true);
     }
 
     private static final HashMap<Integer, List<Integer>> sortIds = new HashMap<>();
@@ -302,51 +265,6 @@ public class LibraryFragment extends Fragment
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch(item.getItemId()) {
-            case R.id.menuLibrarySetDir:
-                if (Scanner.getInstance().isRunning()) {
-                    Scanner.getInstance().stop();
-                }
-
-                mDirectorySelectDialog.show();
-                return true;
-            case R.id.menuLibraryRefresh:
-                // if running, stop is requested
-                if (Scanner.getInstance().isRunning()) {
-                    setLoading(false);
-                    Scanner.getInstance().stop();
-                    return true;
-                }
-
-                onRefresh();
-                return true;
-            case R.id.menuLibrarySetThemeAuto:
-            case R.id.menuLibrarySetThemeDay:
-            case R.id.menuLibrarySetThemeNight:
-                final int mode;
-                if (item.getItemId() == R.id.menuLibrarySetThemeNight)
-                    mode = AppCompatDelegate.MODE_NIGHT_YES;
-                else if (item.getItemId() == R.id.menuLibrarySetThemeDay)
-                    mode = AppCompatDelegate.MODE_NIGHT_NO;
-                else
-                    mode = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;
-                // save to settings
-                SharedPreferences preferences = MainApplication.getPreferences();
-                SharedPreferences.Editor editor = preferences.edit();
-                editor.putInt(Constants.SETTINGS_THEME, mode);
-                editor.apply();
-                // apply
-                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        // crashes on Android9 if executed immediately
-                        AppCompatDelegate.setDefaultNightMode(mode);
-                        // activity.recreate() does not properly recreate views
-                        Activity a = getActivity();
-                        a.finish();
-                        a.startActivity(a.getIntent());
-                    }
-                },500);
-                return true;
             case R.id.menuLibrarySort:
                 // apparently you need to implement custom layout submenus yourself
                 View popupView = getLayoutInflater().inflate(R.layout.layout_library_sort, null);
@@ -499,13 +417,11 @@ public class LibraryFragment extends Fragment
 
     private void onRefresh(boolean refreshAll) {
         Scanner.getInstance().scanLibrary(null, refreshAll);
-        String msg = getResources().getString( refreshAll ? R.string.reload_msg_slow : R.string.reload_msg_fast );
-        Toast.makeText(getActivity(), msg, Toast.LENGTH_SHORT).show();
         setLoading(true);
     }
 
     private void getComics() {
-        List<Comic> comics = Storage.getStorage(getActivity()).listDirectoryComics();
+        List<Comic> comics = Storage.getStorage(getActivity()).listDirectoryComics(getLibraryDir());
         mComicsListManager = new DirectoryListingManager(comics, getLibraryDir());
         sortContent();
         if (mFolderListView!=null && mFolderListView.getAdapter()!=null)
@@ -577,11 +493,7 @@ public class LibraryFragment extends Fragment
     private void setLoading(boolean isLoading) {
         if (isLoading) {
             mRefreshLayout.setRefreshing(true);
-            if (mRefreshItem != null)
-                mRefreshItem.setIcon(ContextCompat.getDrawable(getContext(), R.drawable.ic_refresh_stop_24));
         } else {
-            if (mRefreshItem != null)
-                mRefreshItem.setIcon(ContextCompat.getDrawable(getContext(), R.drawable.ic_refresh_24));
             mRefreshLayout.setRefreshing(false);
             showEmptyMessageIfNeeded();
         }
@@ -621,12 +533,7 @@ public class LibraryFragment extends Fragment
     }
 
     private int calculateNumColumns() {
-        int deviceWidth = Utils.getDeviceWidth(getActivity());
-        int columnWidth = getActivity().getResources().getInteger(R.integer.grid_group_column_width);
-
-        float value = (float) deviceWidth / columnWidth;
-
-        return Math.round(value);
+        return 2;
     }
 
     private final class GroupGridAdapter extends RecyclerView.Adapter {
@@ -668,11 +575,19 @@ public class LibraryFragment extends Fragment
     private class GroupViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         ImageView groupImageView;
         TextView tv;
+        TextView pageCountTextView;
+        ProgressBar progressBar;
+        TextView progressTextView;
+        View readOverlay;
 
         public GroupViewHolder(View itemView) {
             super(itemView);
             groupImageView = (ImageView) itemView.findViewById(R.id.card_group_imageview);
             tv = (TextView) itemView.findViewById(R.id.comic_group_folder);
+            pageCountTextView = (TextView) itemView.findViewById(R.id.card_group_page_count);
+            progressBar = (ProgressBar) itemView.findViewById(R.id.card_group_progress_bar);
+            progressTextView = (TextView) itemView.findViewById(R.id.card_group_progress_text);
+            readOverlay = itemView.findViewById(R.id.card_group_read_overlay);
 
             itemView.setClickable(true);
             itemView.setOnClickListener(this);
@@ -685,6 +600,63 @@ public class LibraryFragment extends Fragment
 
             String dirDisplay = mComicsListManager.getDirectoryDisplayAtIndex(position);
             tv.setText(dirDisplay);
+
+            // Calculate total and current page counts for all comics in this directory
+            String path = mComicsListManager.getDirectoryAtIndex(position);
+            ArrayList<Comic> comics = Storage.getStorage(getActivity()).listComics(path);
+            
+            int totalPages = 0;
+            int currentPages = 0;
+            for (Comic c : comics) {
+                totalPages += c.getTotalPages();
+                currentPages += c.getCurrentPage();
+            }
+
+            // Display page count
+            pageCountTextView.setText(currentPages + "/" + totalPages);
+
+            // Calculate and display progress
+            int progress = totalPages > 0 ? (int)((currentPages * 100.0f) / totalPages) : 0;
+            progressBar.setProgress(progress);
+            progressTextView.setText(progress + "%");
+            
+            // Show overlay and dim title for fully read groups with animation
+            boolean isFullyRead = totalPages > 0 && currentPages >= totalPages;
+            boolean wasVisible = readOverlay.getVisibility() == View.VISIBLE;
+            
+            if (isFullyRead && !wasVisible) {
+                // Fade in overlay and dim text
+                readOverlay.setVisibility(View.VISIBLE);
+                readOverlay.setAlpha(0f);
+                readOverlay.animate()
+                        .alpha(1f)
+                        .setDuration(300)
+                        .start();
+                tv.animate().alpha(0.5f).setDuration(300).start();
+            } else if (!isFullyRead && wasVisible) {
+                // Fade out overlay and restore text
+                readOverlay.animate()
+                        .alpha(0f)
+                        .setDuration(300)
+                        .withEndAction(new Runnable() {
+                            @Override
+                            public void run() {
+                                readOverlay.setVisibility(View.GONE);
+                            }
+                        })
+                        .start();
+                tv.animate().alpha(1.0f).setDuration(300).start();
+            } else if (isFullyRead) {
+                // Already read, ensure correct state without animation
+                readOverlay.setVisibility(View.VISIBLE);
+                readOverlay.setAlpha(1f);
+                tv.setAlpha(0.5f);
+            } else {
+                // Not read, ensure correct state without animation
+                readOverlay.setVisibility(View.GONE);
+                readOverlay.setAlpha(0f);
+                tv.setAlpha(1.0f);
+            }
         }
 
         @Override

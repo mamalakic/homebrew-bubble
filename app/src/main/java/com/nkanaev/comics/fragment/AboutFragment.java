@@ -252,6 +252,14 @@ public class AboutFragment extends Fragment implements View.OnClickListener {
 
         getActivity().setTitle(R.string.menu_about);
         ((MainActivity) getActivity()).setSubTitle("");
+
+        // Disable title area click listener from library view
+        View titleContainer = getActivity().findViewById(R.id.action_bar_title_container);
+        if (titleContainer != null) {
+            titleContainer.setOnClickListener(null);
+            titleContainer.setClickable(false);
+        }
+
         return view;
     }
 

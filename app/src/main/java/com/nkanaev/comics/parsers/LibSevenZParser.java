@@ -73,12 +73,7 @@ public class LibSevenZParser extends AbstractParser {
             entries.add(entry);
         }
 
-        Collections.sort(entries, new IgnoreCaseComparator() {
-            @Override
-            public String stringValue(Object o) {
-                return ((ArchiveEntry) o).path;
-            }
-        });
+        Collections.sort(entries, IgnoreCaseComparator.forFunction((ArchiveEntry e) -> e.path));
 
         mEntries = entries;
 
@@ -141,9 +136,7 @@ public class LibSevenZParser extends AbstractParser {
     @Override
     public Map getPageMetaData(int num) throws IOException {
         parse();
-        Map m = new HashMap();
-        m.put(Parser.PAGEMETADATA_KEY_NAME,mEntries.get(num).path);
-        return m;
+        return createPageMetaDataWithName(mEntries.get(num).path);
     }
 
     @Override

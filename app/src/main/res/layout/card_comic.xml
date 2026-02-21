@@ -21,6 +21,14 @@
                 android:layout_height="0dp"
                 android:scaleType="fitEnd"
                 app:layout_constraintTop_toTopOf="parent"/>
+        <View
+                android:id="@+id/card_comic_read_overlay"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:background="#AA000000"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="@id/comicImageView"
+                android:visibility="gone"/>
         <LinearLayout
                 android:id="@+id/comicLayout"
                 android:layout_width="match_parent"

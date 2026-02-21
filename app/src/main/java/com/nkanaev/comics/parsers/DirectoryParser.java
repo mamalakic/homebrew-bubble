@@ -41,13 +41,7 @@ public class DirectoryParser extends AbstractParser {
             }
         }
 
-        Collections.sort(mFiles, new IgnoreCaseComparator() {
-            @Override
-            public String stringValue(Object o) {
-                String name = ((File) o).getName();
-                return name;
-            }
-        });
+        Collections.sort(mFiles, IgnoreCaseComparator.forFunction(File::getName));
     }
 
     @Override
@@ -65,9 +59,7 @@ public class DirectoryParser extends AbstractParser {
     @Override
     public Map getPageMetaData(int num) throws IOException {
         parse();
-        Map m = new HashMap();
-        m.put(Parser.PAGEMETADATA_KEY_NAME,mFiles.get(num).getName());
-        return m;
+        return createPageMetaDataWithName(mFiles.get(num).getName());
     }
 
     @Override

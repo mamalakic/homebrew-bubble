@@ -81,12 +81,8 @@ public class TarParser extends AbstractParser {
                 }
             }
 
-            Collections.sort(entries, new IgnoreCaseComparator() {
-                @Override
-                public String stringValue(Object o) {
-                    return ((TarEntry) o).entry.getName();
-                }
-            });
+            Collections.sort(entries, IgnoreCaseComparator.forFunction(
+                (TarEntry e) -> e.entry.getName()));
 
             mEntries = entries;
             mParsedAlready = true;

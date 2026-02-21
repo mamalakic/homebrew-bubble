@@ -1,10 +1,28 @@
 package com.nkanaev.comics.managers;
 
 import java.util.Comparator;
+import java.util.function.Function;
 
 public abstract class IgnoreCaseComparator implements Comparator<Object> {
 
     public abstract String stringValue(Object o);
+
+    /**
+     * Creates a comparator for objects that extracts a string using the provided function.
+     * This eliminates the need for anonymous inner classes throughout the codebase.
+     *
+     * @param stringExtractor Function to extract string from object
+     * @param <T> Type of objects being compared
+     * @return IgnoreCaseComparator instance
+     */
+    public static <T> IgnoreCaseComparator forFunction(Function<T, String> stringExtractor) {
+        return new IgnoreCaseComparator() {
+            @Override
+            public String stringValue(Object o) {
+                return stringExtractor.apply((T) o);
+            }
+        };
+    }
 
     private String preProcess(Object o){
         if (o == null)

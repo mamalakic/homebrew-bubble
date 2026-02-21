@@ -54,12 +54,7 @@ public class SevenZStreamParser extends AbstractParser {
             }
         }
 
-        Collections.sort(mEntries, new IgnoreCaseComparator() {
-            @Override
-            public String stringValue(Object o) {
-                return ((SevenZArchiveEntry) o).getName();
-            }
-        });
+        Collections.sort(mEntries, IgnoreCaseComparator.forFunction(SevenZArchiveEntry::getName));
     }
 
     @Override
@@ -171,9 +166,7 @@ public class SevenZStreamParser extends AbstractParser {
     @Override
     public Map getPageMetaData(int num) throws IOException {
         parse();
-        Map m = new HashMap();
-        m.put(Parser.PAGEMETADATA_KEY_NAME,mEntries.get(num).getName());
-        return m;
+        return createPageMetaDataWithName(mEntries.get(num).getName());
     }
 
     @Override

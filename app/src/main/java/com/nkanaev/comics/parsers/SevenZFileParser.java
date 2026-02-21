@@ -35,12 +35,7 @@ public class SevenZFileParser extends AbstractParser {
             }
         }
 
-        Collections.sort(mEntries, new IgnoreCaseComparator() {
-            @Override
-            public String stringValue(Object o) {
-                return ((SevenZArchiveEntry) o).getName();
-            }
-        });
+        Collections.sort(mEntries, IgnoreCaseComparator.forFunction(SevenZArchiveEntry::getName));
 
         mParsedAlready = true;
     }

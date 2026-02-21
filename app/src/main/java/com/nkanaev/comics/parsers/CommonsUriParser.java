@@ -42,12 +42,7 @@ public class CommonsUriParser extends AbstractParser {
                 }
             }
 
-            Collections.sort(mEntries, new IgnoreCaseComparator() {
-                @Override
-                public String stringValue(Object o) {
-                    return ((ArchiveEntry) o).getName();
-                }
-            });
+            Collections.sort(mEntries, IgnoreCaseComparator.forFunction(ArchiveEntry::getName));
         } catch (ArchiveException e) {
             throw new IOException(e);
         } finally {

@@ -46,6 +46,14 @@ public class BrowserFragment extends Fragment
         }
 
         getActivity().setTitle(R.string.menu_browser);
+        ((MainActivity) getActivity()).setSubTitle("");
+
+        // Disable title area click listener from library view
+        View titleContainer = getActivity().findViewById(R.id.action_bar_title_container);
+        if (titleContainer != null) {
+            titleContainer.setOnClickListener(null);
+            titleContainer.setClickable(false);
+        }
     }
 
     @Override
@@ -124,12 +132,7 @@ public class BrowserFragment extends Fragment
         }
 
         // sort alphabetically ignore-case
-        Collections.sort(subDirs, new IgnoreCaseComparator() {
-            @Override
-            public String stringValue(Object o) {
-                return ((File) o).getName();
-            }
-        });
+        Collections.sort(subDirs, IgnoreCaseComparator.forFunction(File::getName));
 
         // add '..' to top
         if (!mCurrentDir.getAbsolutePath().equals(mRootDir.getAbsolutePath())) {
@@ -160,6 +163,8 @@ public class BrowserFragment extends Fragment
         intent.putExtra(ReaderFragment.PARAM_HANDLER, file);
         intent.putExtra(ReaderFragment.PARAM_MODE, ReaderFragment.Mode.MODE_BROWSER);
         startActivity(intent);
+        // Opening: fade(200, 300, 200) = fade to black 200ms, hold 300ms, fade from black 200ms
+        getActivity().overridePendingTransition(R.anim.fade_from_black_200_delay_300, R.anim.fade_to_black_200);
     }
 
     @Override
@@ -184,6 +189,8 @@ public class BrowserFragment extends Fragment
         intent.putExtra(ReaderFragment.PARAM_HANDLER, file);
         intent.putExtra(ReaderFragment.PARAM_MODE, ReaderFragment.Mode.MODE_BROWSER);
         startActivity(intent);
+        // Opening: fade(200, 300, 200) = fade to black 200ms, hold 300ms, fade from black 200ms
+        getActivity().overridePendingTransition(R.anim.fade_from_black_200_delay_300, R.anim.fade_to_black_200);
         return true;
     }
 

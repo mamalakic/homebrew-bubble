@@ -17,12 +17,7 @@
                 android:fadeScrollbars="true"
                 android:scrollbarSize="4dp"
                 android:scrollbarStyle="insideOverlay"
-                android:scrollbarThumbVertical="@color/primaryDark"
-                app:fastScrollEnabled="true"
-                app:fastScrollHorizontalThumbDrawable="@drawable/scrollbar_thumb"
-                app:fastScrollHorizontalTrackDrawable="@drawable/scrollbar_line"
-                app:fastScrollVerticalThumbDrawable="@drawable/scrollbar_thumb"
-                app:fastScrollVerticalTrackDrawable="@drawable/scrollbar_line"/>
+                android:scrollbarThumbVertical="@color/primaryDark"/>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
     <RelativeLayout
             android:id="@+id/library_empty"

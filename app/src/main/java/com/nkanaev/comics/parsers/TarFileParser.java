@@ -69,12 +69,7 @@ public class TarFileParser extends AbstractParser {
             }
         }
 
-        Collections.sort(entries, new IgnoreCaseComparator() {
-            @Override
-            public String stringValue(Object o) {
-                return ((TarArchiveEntry) o).getName();
-            }
-        });
+        Collections.sort(entries, IgnoreCaseComparator.forFunction(TarArchiveEntry::getName));
 
         mEntries = entries;
         mParsedAlready = true;
@@ -106,9 +101,7 @@ public class TarFileParser extends AbstractParser {
     @Override
     public Map getPageMetaData(int num) throws IOException {
         parse();
-        Map<String,String> m = new HashMap<>();
-        m.put(Parser.PAGEMETADATA_KEY_NAME,mEntries.get(num).getName());
-        return m;
+        return createPageMetaDataWithName(mEntries.get(num).getName());
     }
 
     @Override
