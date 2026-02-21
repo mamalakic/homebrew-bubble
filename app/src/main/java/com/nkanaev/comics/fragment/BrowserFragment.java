@@ -163,8 +163,8 @@ public class BrowserFragment extends Fragment
         intent.putExtra(ReaderFragment.PARAM_HANDLER, file);
         intent.putExtra(ReaderFragment.PARAM_MODE, ReaderFragment.Mode.MODE_BROWSER);
         startActivity(intent);
-        // Opening: fade(200, 300, 200) = fade to black 200ms, hold 300ms, fade from black 200ms
-        getActivity().overridePendingTransition(R.anim.fade_from_black_200_delay_300, R.anim.fade_to_black_200);
+        // Opening: fade to black, then fade from black
+        getActivity().overridePendingTransition(R.anim.fade_from_black, R.anim.fade_to_black);
     }
 
     @Override
@@ -189,8 +189,8 @@ public class BrowserFragment extends Fragment
         intent.putExtra(ReaderFragment.PARAM_HANDLER, file);
         intent.putExtra(ReaderFragment.PARAM_MODE, ReaderFragment.Mode.MODE_BROWSER);
         startActivity(intent);
-        // Opening: fade(200, 300, 200) = fade to black 200ms, hold 300ms, fade from black 200ms
-        getActivity().overridePendingTransition(R.anim.fade_from_black_200_delay_300, R.anim.fade_to_black_200);
+        // Opening: fade to black, then fade from black
+        getActivity().overridePendingTransition(R.anim.fade_from_black, R.anim.fade_to_black);
         return true;
     }
 
