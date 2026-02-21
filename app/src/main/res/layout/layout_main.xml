@@ -10,12 +10,15 @@
     <com.google.android.material.appbar.AppBarLayout
             android:id="@+id/appbar_layout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent"
+            app:elevation="0dp">
         <androidx.appcompat.widget.Toolbar
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:minHeight="?attr/actionBarSize"
+                android:background="@drawable/toolbar_bg"
                 android:theme="@style/MyToolbarTheme"
                 app:popupTheme="@style/MyPopupMenuTheme"
                 app:contentInsetLeft="@dimen/toolbar_inset"

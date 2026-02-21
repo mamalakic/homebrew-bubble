@@ -103,6 +103,7 @@ public class ReaderFragment extends Fragment implements View.OnTouchListener {
     private Comic mComic = null;
     private Comic mNewComic;
     private int mNewComicTitle;
+    private boolean mStripTitleNoise = false;
 
     public enum Mode {
         MODE_LIBRARY,
@@ -252,6 +253,7 @@ public class ReaderFragment extends Fragment implements View.OnTouchListener {
                 Constants.PageViewMode.ASPECT_FIT.native_int);
         mPageViewMode = Constants.PageViewMode.values()[viewModeInt];
         mIsLeftToRight = preferences.getBoolean(Constants.SETTINGS_READING_LEFT_TO_RIGHT, true);
+        mStripTitleNoise = preferences.getBoolean(Constants.SETTINGS_STRIP_TITLE_NOISE, false);
 
         setHasOptionsMenu(true);
     }
@@ -387,6 +389,9 @@ public class ReaderFragment extends Fragment implements View.OnTouchListener {
             title += mFile.getName();
         else if (mUri != null)
             title += mUri.getLastPathSegment();
+        if (mStripTitleNoise) {
+            title = Utils.stripNoiseFromTitle(title);
+        }
         ((TextView) getActivity().findViewById(R.id.action_bar_title)).setText(title);
 
         // move parsing into bg thread to return view early
@@ -1031,9 +1036,14 @@ public class ReaderFragment extends Fragment implements View.OnTouchListener {
         mNewComic = newComic;
         mNewComicTitle = titleRes;
 
+        String comicName = newComic.getFile().getName();
+        if (mStripTitleNoise) {
+            comicName = Utils.stripNoiseFromTitle(comicName);
+        }
+
         alertDialog = new AlertDialog.Builder(getActivity(), R.style.AppCompatAlertDialogStyle)
                 .setTitle(titleRes)
-                .setMessage(newComic.getFile().getName())
+                .setMessage(comicName)
                 .setPositiveButton(R.string.alert_action_positive, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
