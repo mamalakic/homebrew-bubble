@@ -73,6 +73,7 @@ public class LibraryFragment extends Fragment
     private boolean mIsRefreshPlanned = false;
     private Handler mUpdateHandler = new UpdateHandler(this);
     private int mSort = R.id.sort_name_asc;
+    private boolean mStripTitleNoise = false;
 
     public LibraryFragment() {
     }
@@ -134,6 +135,9 @@ public class LibraryFragment extends Fragment
             mSort = mode.resId;
             break;
         }
+        
+        mStripTitleNoise = MainApplication.getPreferences().getBoolean(
+                Constants.SETTINGS_STRIP_TITLE_NOISE, false);
 
         mDirectorySelectDialog = new DirectorySelectDialog(getActivity(), externalStorageFiles);
         mDirectorySelectDialog.setCurrentDirectory(Environment.getExternalStorageDirectory());
@@ -256,7 +260,6 @@ public class LibraryFragment extends Fragment
     static {
         sortIds.put(R.id.sort_name_label, Arrays.asList(new Integer[]{R.id.sort_name_asc, R.id.sort_name_desc}));
         sortIds.put(R.id.sort_access_label, Arrays.asList(new Integer[]{R.id.sort_access_desc, R.id.sort_access_asc}));
-        sortIds.put(R.id.sort_size_label, Arrays.asList(new Integer[]{R.id.sort_size_asc, R.id.sort_size_desc}));
         sortIds.put(R.id.sort_creation_label, Arrays.asList(new Integer[]{R.id.sort_creation_desc, R.id.sort_creation_asc}));
         sortIds.put(R.id.sort_modified_label, Arrays.asList(new Integer[]{R.id.sort_modified_desc, R.id.sort_modified_asc}));
     }
@@ -274,10 +277,8 @@ public class LibraryFragment extends Fragment
                     popupView.findViewById(R.id.sort_header_divider).setVisibility(View.GONE);
                 }
                 // creation time needs java.nio only avail on API26+
-                // disabled for now, folders give the same stamp for creation/lastmod why izzat?
-                if (true || !Utils.isOreoOrLater()) {
+                if (!Utils.isOreoOrLater()) {
                     popupView.findViewById(R.id.sort_creation).setVisibility(View.GONE);
-                    popupView.findViewById(R.id.sort_creation_divider).setVisibility(View.GONE);
                 }
 
                 @StyleRes int theme = ((MainActivity) getActivity()).getToolbar().getPopupTheme();
@@ -285,8 +286,19 @@ public class LibraryFragment extends Fragment
                 @ColorInt int active = Utils.getThemeColor(androidx.appcompat.R.attr.colorControlActivated, theme);
 
                 PopupWindow popupWindow = new PopupWindow(popupView, RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT, true);
-                // weirdly needed on preAPI21 to dismiss on tap outside
-                popupWindow.setBackgroundDrawable(new ColorDrawable(androidx.appcompat.R.attr.colorPrimary));
+                popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+                popupWindow.setAnimationStyle(android.R.style.Animation_Dialog);
+
+                // wire up strip noise toggle
+                androidx.appcompat.widget.SwitchCompat stripNoiseToggle = popupView.findViewById(R.id.strip_title_noise_toggle);
+                stripNoiseToggle.setChecked(mStripTitleNoise);
+                stripNoiseToggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                    mStripTitleNoise = isChecked;
+                    MainApplication.getPreferences().edit()
+                            .putBoolean(Constants.SETTINGS_STRIP_TITLE_NOISE, isChecked)
+                            .apply();
+                    mFolderListView.getAdapter().notifyDataSetChanged();
+                });
 
                 // add click listener/apply styling according to selected sort mode
                 for (int labelId : sortIds.keySet()) {
@@ -437,11 +449,11 @@ public class LibraryFragment extends Fragment
             case R.id.sort_name_desc:
                 comparator = new DirectoryListingManager.NameComparator.Reverse();
                 break;
-            case R.id.sort_size_asc:
-                comparator = new DirectoryListingManager.SizeComparator();
+            case R.id.sort_creation_asc:
+                comparator = new DirectoryListingManager.CreationComparator();
                 break;
-            case R.id.sort_size_desc:
-                comparator = new DirectoryListingManager.SizeComparator.Reverse();
+            case R.id.sort_creation_desc:
+                comparator = new DirectoryListingManager.CreationComparator.Reverse();
                 break;
             case R.id.sort_modified_asc:
                 comparator = new DirectoryListingManager.ModifiedComparator();
@@ -599,6 +611,9 @@ public class LibraryFragment extends Fragment
             mPicasso.load(uri).into(groupImageView);
 
             String dirDisplay = mComicsListManager.getDirectoryDisplayAtIndex(position);
+            if (mStripTitleNoise) {
+                dirDisplay = Utils.stripNoiseFromTitle(dirDisplay);
+            }
             tv.setText(dirDisplay);
 
             // Calculate total and current page counts for all comics in this directory

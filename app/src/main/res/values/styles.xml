@@ -29,7 +29,7 @@
     </style>
 
     <style name="MyPopupMenuTheme" parent="Widget.AppCompat.PopupMenu">
-        <item name="android:background">?attr/colorPrimary</item>
+        <item name="android:background">@drawable/popup_menu_bg</item>
 
         <item name="colorControlNormal">@color/white_trans50</item>
         <item name="colorControlActivated">@color/white</item>
@@ -56,7 +56,7 @@
         <!--item name="android:background">@color/black</item-->
     </style>
     <style name="MyPopupMenuListView" parent="Widget.AppCompat.ListView">
-        <item name="android:divider">@color/white</item>
+        <item name="android:divider">@color/white_trans25</item>
         <item name="android:dividerHeight">1dp</item>
         <item name="android:textAppearance">@style/MyToolbarTextAppearance</item>
     </style>

@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment;
 import com.nkanaev.comics.BuildConfig;
 import com.nkanaev.comics.R;
 import com.nkanaev.comics.fragment.ReaderFragment;
+import com.nkanaev.comics.managers.Utils;
 
 import java.io.File;
 
@@ -47,6 +48,10 @@ public class ReaderActivity extends AppCompatActivity {
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_reader);
         setSupportActionBar(toolbar);
+        
+        if (Utils.isLollipopOrLater()) {
+            toolbar.setElevation(12);
+        }
 
         if (savedInstanceState == null) {
             if (Intent.ACTION_VIEW.equals(getIntent().getAction())) {

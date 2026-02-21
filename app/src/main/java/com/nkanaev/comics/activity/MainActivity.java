@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity
         getSupportFragmentManager().addOnBackStackChangedListener(this);
 
         if (Utils.isLollipopOrLater()) {
-            toolbar.setElevation(8);
+            toolbar.setElevation(12);
         }
 
         // API35 forced edge-to-edge fix: apply system bar paddings
