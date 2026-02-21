@@ -1,42 +1,8 @@
-# Bubble2        ![Bubble2 logo](https://raw.githubusercontent.com/edeso/bubble2/master/art/icon-2022.svg)
+# homebrew-bubble, fork of Bubble2        ![Bubble2 logo](https://raw.githubusercontent.com/edeso/bubble2/master/art/icon-2022.svg)
 
 Android comic book reader, image archive viewer. Simple yet comfy.<br/>
 Open PDF, RAR, ZIP, 7Z, TAR files. Display BMP, JPG, GIF, PNG, WebP and JP2/J2K images.<br/>
 Based on Bubble v1.6.0 by Nazar Kanaev. Upgraded dependencies, enhancements as felt needed. 
-
-**Feel free to open an [issue](https://github.com/edeso/bubble2/issues) or even better contribute with a pull request.**
-
-## Download
-
-APKs available on sf.net https://sourceforge.net/projects/bubble2/files/
-
-or
-
-[add it to F-Droid](https://f-droid.org/en/tutorials/add-repo/) 
-* use the repository link https://bubble2.soldin.de/repo/
-* search for **Bubble2**, install, enjoy
-
-## Features
-
-* Optimized for tablets
-* Open ZIP/CBZ, RAR/CBR, 7Z/CB7, PDF and FOLDER comic books
-* Open TAR/CBT files with Brotli/Bzip2/Gzip/LZMA/XZ/Zstd compression
-* Display BMP, JPG, GIF, PNG, WebP and JP2/J2K(as used by archive.org) image files in archives/from folders
-* Advanced zoom and scaling modes
-* Comics/Manga reading mode
-* Library with automatic bookmarks
-* Export page as JPG to Downloads folder
-* Simple file browser
-* Best served on Android 8.0(Oreo) or later
-* Still runs on Android 5.0(Lollipop)+ (no PDF, Brotli, XZ, Zstd support though)
-* Free, open-source, no ads, gluten-free
-
-## Contributors
-
-* [Nazar Kanaev](https://github.com/nkanaev) (original author)
-* Edgar Soldin (current maintainer)
-* Nicola Spanti (french translation)
-* Alez Boom (spanish translation)
 
 ## License
 
