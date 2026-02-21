@@ -44,7 +44,6 @@
     <string name="menu_browser_sort_pages_total">Pages total</string>
     <string name="menu_browser_sort_pages_read">Pages read</string>
     <string name="menu_browser_sort_pages_left">Pages left</string>
-    <string name="menu_strip_title_noise">Strip noise from title</string>
 
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>

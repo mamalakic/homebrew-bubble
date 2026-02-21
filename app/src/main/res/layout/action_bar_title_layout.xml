@@ -6,10 +6,10 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:theme="@style/MyToolbarTheme"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
-        android:paddingTop="6dp"
-        android:paddingBottom="6dp">
+        android:background="?android:attr/selectableItemBackground"
+        android:padding="4dp"
+        android:clickable="true"
+        android:focusable="true">
         <TextView
                 android:id="@+id/action_bar_title"
                 android:layout_height="wrap_content"
@@ -17,8 +17,7 @@
                 android:gravity="start"
                 android:singleLine="true"
                 android:ellipsize="end"
-                android:textSize="21sp"
-                android:letterSpacing="0.01"
+                android:textSize="20sp"
                 android:text="Title"/>
         <TextView
             android:id="@+id/action_bar_subtitle"
@@ -27,10 +26,7 @@
             android:gravity="start"
             android:singleLine="true"
             android:ellipsize="start"
-            android:textSize="13sp"
-            android:alpha="0.3"
-            android:layout_marginTop="2dp"
-            android:letterSpacing="0.02"
+            android:textSize="12sp"
             android:text="Subtitle"
             android:visibility="visible"/>
 </LinearLayout>
