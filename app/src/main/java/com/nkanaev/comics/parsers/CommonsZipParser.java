@@ -42,13 +42,7 @@ public class CommonsZipParser extends AbstractParser {
         }
 
         //noinspection unchecked
-        Collections.sort(mEntries,
-                new IgnoreCaseComparator() {
-                    @Override
-                    public String stringValue(Object o) {
-                        return ((ZipArchiveEntry) o).getName();
-                    }
-                });
+        Collections.sort(mEntries, IgnoreCaseComparator.forFunction(ZipArchiveEntry::getName));
     }
 
     @Override
@@ -67,10 +61,10 @@ public class CommonsZipParser extends AbstractParser {
     @Override
     public Map getPageMetaData(int num) throws IOException {
         parse();
-        Map m = new HashMap();
-        m.put(Parser.PAGEMETADATA_KEY_NAME,mEntries.get(num).getName());
-        m.put(Parser.PAGEMETADATA_KEY_SIZE,mEntries.get(num).getSize());
-        return m;
+        return createPageMetaDataWithNameAndSize(
+            mEntries.get(num).getName(),
+            mEntries.get(num).getSize()
+        );
     }
 
     @Override

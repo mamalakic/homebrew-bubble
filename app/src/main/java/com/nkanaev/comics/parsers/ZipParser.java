@@ -37,12 +37,7 @@ public class ZipParser extends AbstractParser {
             }
         }
 
-        Collections.sort(mEntries, new IgnoreCaseComparator() {
-            @Override
-            public String stringValue(Object o) {
-                return ((ZipEntry) o).getName();
-            }
-        });
+        Collections.sort(mEntries, IgnoreCaseComparator.forFunction(ZipEntry::getName));
     }
 
     @Override
@@ -61,9 +56,7 @@ public class ZipParser extends AbstractParser {
     @Override
     public Map getPageMetaData(int num) throws IOException {
         parse();
-        Map m = new HashMap();
-        m.put(Parser.PAGEMETADATA_KEY_NAME,mEntries.get(num).getName());
-        return m;
+        return createPageMetaDataWithName(mEntries.get(num).getName());
     }
 
     @Override

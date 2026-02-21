@@ -132,12 +132,7 @@ public class BrowserFragment extends Fragment
         }
 
         // sort alphabetically ignore-case
-        Collections.sort(subDirs, new IgnoreCaseComparator() {
-            @Override
-            public String stringValue(Object o) {
-                return ((File) o).getName();
-            }
-        });
+        Collections.sort(subDirs, IgnoreCaseComparator.forFunction(File::getName));
 
         // add '..' to top
         if (!mCurrentDir.getAbsolutePath().equals(mRootDir.getAbsolutePath())) {

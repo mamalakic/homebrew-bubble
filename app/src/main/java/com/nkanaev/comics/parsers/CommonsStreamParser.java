@@ -49,12 +49,8 @@ public class CommonsStreamParser extends AbstractParser {
                 }
             }
 
-            Collections.sort(mEntries, new IgnoreCaseComparator() {
-                @Override
-                public String stringValue(Object o) {
-                    return ((StreamArchiveEntry) o).entry.getName();
-                }
-            });
+            Collections.sort(mEntries, IgnoreCaseComparator.forFunction(
+                (StreamArchiveEntry e) -> e.entry.getName()));
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {

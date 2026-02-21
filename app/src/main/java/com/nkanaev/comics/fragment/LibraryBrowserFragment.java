@@ -461,190 +461,84 @@ public class LibraryBrowserFragment extends Fragment
         if (mAllItems == null || mAllItems.isEmpty())
             return;
 
-        Comparator comparator;
+        Comparator<Comic> comparator;
         switch (mSort) {
             case R.id.sort_name_desc:
-                comparator = new IgnoreCaseComparator.Reverse() {
-                    @Override
-                    public String stringValue(Object o) {
-                        return ((Comic) o).getFile().getName();
-                    }
-                };
+                comparator = Comparator.comparing((Comic c) -> c.getFile().getName(), 
+                    String.CASE_INSENSITIVE_ORDER).reversed();
                 break;
             case R.id.sort_size_asc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        long aSize = getSize(a.getFile());
-                        long bSize = getSize(b.getFile());
-                        long diff = aSize - bSize;
-                        return diff < 0 ? -1 : (diff > 0 ? 1 : 0);
-                    }
-
-                    private long getSize(File f) {
-                        if (f == null)
-                            return 0;
-                        else if (f.isDirectory())
-                            return Utils.getFolderSize(f, false);
-
-                        return f.length();
-                    }
-                };
+                comparator = Comparator.comparingLong(c -> getComicSize(c.getFile()));
                 break;
             case R.id.sort_size_desc:
-                comparator = new Comparator<Comic>() {
-                    public int compare(Comic a, Comic b) {
-                        long aSize = getSize(b.getFile());
-                        long bSize = getSize(a.getFile());
-                        long diff = aSize - bSize;
-                        return diff < 0 ? -1 : (diff > 0 ? 1 : 0);
-                    }
-
-                    private long getSize(File f) {
-                        if (f == null)
-                            return 0;
-                        else if (f.isDirectory())
-                            return Utils.getFolderSize(f, false);
-
-                        return f.length();
-                    }
-                };
+                comparator = Comparator.comparingLong((Comic c) -> getComicSize(c.getFile())).reversed();
                 break;
             case R.id.sort_creation_asc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        long aTime = creationTime(a.getFile());
-                        long bTime = creationTime(b.getFile());
-                        return Long.compare(aTime, bTime);
-                    }
-
-                    private long creationTime(File f) {
-                        try {
-                            FileTime creationTime = (FileTime) Files.getAttribute(f.toPath(), "creationTime");
-                            return creationTime.toMillis();
-                        } catch (IOException ex) {
-                            return 0;
-                        }
-                    }
-                };
+                comparator = Comparator.comparingLong(c -> getCreationTime(c.getFile()));
                 break;
             case R.id.sort_creation_desc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        long aTime = creationTime(b.getFile());
-                        long bTime = creationTime(a.getFile());
-                        return Long.compare(aTime, bTime);
-                    }
-
-                    private long creationTime(File f) {
-                        try {
-                            FileTime creationTime = (FileTime) Files.getAttribute(f.toPath(), "creationTime");
-                            return creationTime.toMillis();
-                        } catch (IOException ex) {
-                            return 0;
-                        }
-                    }
-                };
+                comparator = Comparator.comparingLong((Comic c) -> getCreationTime(c.getFile())).reversed();
                 break;
             case R.id.sort_modified_asc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        long aTime = a.getFile().lastModified();
-                        long bTime = b.getFile().lastModified();
-                        return Long.compare(aTime, bTime);
-                    }
-                };
+                comparator = Comparator.comparingLong(c -> c.getFile().lastModified());
                 break;
             case R.id.sort_modified_desc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        long aTime = b.getFile().lastModified();
-                        long bTime = a.getFile().lastModified();
-                        return Long.compare(aTime, bTime);
-                    }
-                };
+                comparator = Comparator.comparingLong((Comic c) -> c.getFile().lastModified()).reversed();
                 break;
             case R.id.sort_pages_asc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        return a.getTotalPages() - b.getTotalPages();
-                    }
-                };
+                comparator = Comparator.comparingInt(Comic::getTotalPages);
                 break;
             case R.id.sort_pages_desc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        return b.getTotalPages() - a.getTotalPages();
-                    }
-                };
+                comparator = Comparator.comparingInt(Comic::getTotalPages).reversed();
                 break;
             case R.id.sort_pages_read_asc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        return a.getCurrentPage() - b.getCurrentPage();
-                    }
-                };
+                comparator = Comparator.comparingInt(Comic::getCurrentPage);
                 break;
             case R.id.sort_pages_read_desc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        return b.getCurrentPage() - a.getCurrentPage();
-                    }
-                };
+                comparator = Comparator.comparingInt(Comic::getCurrentPage).reversed();
                 break;
             case R.id.sort_pages_left_asc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        return (a.getTotalPages() - a.getCurrentPage()) -
-                                (b.getTotalPages() - b.getCurrentPage());
-                    }
-                };
+                comparator = Comparator.comparingInt(c -> c.getTotalPages() - c.getCurrentPage());
                 break;
             case R.id.sort_pages_left_desc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        return (b.getTotalPages() - b.getCurrentPage()) -
-                                (a.getTotalPages() - a.getCurrentPage());
-                    }
-                };
+                comparator = Comparator.comparingInt((Comic c) -> c.getTotalPages() - c.getCurrentPage()).reversed();
                 break;
             case R.id.sort_access_asc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        return Long.compare(a.getUpdatedAt(), b.getUpdatedAt());
-                    }
-                };
+                comparator = Comparator.comparingLong(Comic::getUpdatedAt);
                 break;
             case R.id.sort_access_desc:
-                comparator = new Comparator<Comic>() {
-                    @Override
-                    public int compare(Comic a, Comic b) {
-                        return Long.compare(b.getUpdatedAt(), a.getUpdatedAt());
-                    }
-                };
+                comparator = Comparator.comparingLong(Comic::getUpdatedAt).reversed();
                 break;
             default:
-                comparator = new IgnoreCaseComparator() {
-                    @Override
-                    public String stringValue(Object o) {
-                        return ((Comic) o).getFile().getName();
-                    }
-                };
+                comparator = Comparator.comparing((Comic c) -> c.getFile().getName(), 
+                    String.CASE_INSENSITIVE_ORDER);
                 break;
         }
 
         Collections.sort(mAllItems, comparator);
+    }
+
+    /**
+     * Helper method to get comic size - eliminates duplication.
+     */
+    private long getComicSize(File f) {
+        if (f == null)
+            return 0;
+        else if (f.isDirectory())
+            return Utils.getFolderSize(f, false);
+        return f.length();
+    }
+
+    /**
+     * Helper method to get creation time - eliminates duplication.
+     */
+    private long getCreationTime(File f) {
+        try {
+            FileTime creationTime = (FileTime) Files.getAttribute(f.toPath(), "creationTime");
+            return creationTime.toMillis();
+        } catch (IOException ex) {
+            return 0;
+        }
     }
 
     private Comic getComicAtPosition(int position) {

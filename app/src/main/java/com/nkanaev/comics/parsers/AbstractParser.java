@@ -107,6 +107,25 @@ public abstract class AbstractParser implements Parser {
         return Collections.emptyMap();
     }
 
+    /**
+     * Helper method to create page metadata with just a name.
+     * Reduces duplication across parser implementations.
+     */
+    protected Map<String, String> createPageMetaDataWithName(String name) {
+        Map<String, String> m = new java.util.HashMap<>();
+        m.put(Parser.PAGEMETADATA_KEY_NAME, name);
+        return m;
+    }
+
+    /**
+     * Helper method to create page metadata with name and size.
+     */
+    protected Map<String, String> createPageMetaDataWithNameAndSize(String name, long size) {
+        Map<String, String> m = createPageMetaDataWithName(name);
+        m.put(Parser.PAGEMETADATA_KEY_SIZE, String.valueOf(size));
+        return m;
+    }
+
     @Override
     abstract public int numPages() throws IOException;
 
