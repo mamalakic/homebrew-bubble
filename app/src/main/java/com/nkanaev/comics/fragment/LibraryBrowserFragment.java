@@ -67,8 +67,9 @@ public class LibraryBrowserFragment extends Fragment
     private String mPath;
     private Picasso mPicasso;
     private String mFilterSearch = "";
-    private int mFilterRead = R.id.menu_browser_filter_all;
+    private int mFilterRead = 0; // 0=all, 1=read, 2=unread, 3=unfinished, 4=reading
     private int mSort = R.id.sort_name_asc;
+    private boolean mStripTitleNoise = false;
 
     private RecyclerView mComicListView;
     private SwipeRefreshLayout mRefreshLayout;
@@ -103,6 +104,9 @@ public class LibraryBrowserFragment extends Fragment
             mSort = mode.resId;
             break;
         }
+        
+        mStripTitleNoise = MainApplication.getPreferences().getBoolean(
+                Constants.SETTINGS_STRIP_TITLE_NOISE, false);
 
         getComics();
         setHasOptionsMenu(true);
@@ -168,13 +172,6 @@ public class LibraryBrowserFragment extends Fragment
         super.onPause();
     }
 
-    private Menu mFilterMenu, mSortMenu;
-
-    @Override
-    public void onPrepareOptionsMenu(Menu menu) {
-        super.onPrepareOptionsMenu(menu);
-    }
-
     SearchView mSearchView;
 
     @SuppressLint("RestrictedApi")
@@ -191,18 +188,7 @@ public class LibraryBrowserFragment extends Fragment
         mSearchView = (SearchView) MenuItemCompat.getActionView(searchItem);
         mSearchView.setOnQueryTextListener(this);
 
-        MenuItem filterItem = menu.findItem(R.id.menu_browser_filter);
-        mFilterMenu = filterItem.getSubMenu();
-
-        // fixup menu formatting
-        updateColors();
-
         super.onCreateOptionsMenu(menu, inflater);
-
-        // align header title of generated sub menu right
-        SpannableString title = new SpannableString(getResources().getString(R.string.menu_browser_filter));
-        title.setSpan(new AlignmentSpan.Standard(Layout.Alignment.ALIGN_OPPOSITE), 0, title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        menu.findItem(R.id.menu_browser_filter).getSubMenu().setHeaderTitle(title);
     }
 
     private static final HashMap<Integer, List<Integer>> sortIds = new HashMap<>();
@@ -210,12 +196,31 @@ public class LibraryBrowserFragment extends Fragment
     static {
         sortIds.put(R.id.sort_name_label, Arrays.asList(new Integer[]{R.id.sort_name_asc, R.id.sort_name_desc}));
         sortIds.put(R.id.sort_access_label, Arrays.asList(new Integer[]{R.id.sort_access_desc, R.id.sort_access_asc}));
-        sortIds.put(R.id.sort_size_label, Arrays.asList(new Integer[]{R.id.sort_size_asc, R.id.sort_size_desc}));
         sortIds.put(R.id.sort_creation_label, Arrays.asList(new Integer[]{R.id.sort_creation_desc, R.id.sort_creation_asc}));
         sortIds.put(R.id.sort_modified_label, Arrays.asList(new Integer[]{R.id.sort_modified_desc, R.id.sort_modified_asc}));
         sortIds.put(R.id.sort_pages_label, Arrays.asList(new Integer[]{R.id.sort_pages_asc, R.id.sort_pages_desc}));
-        sortIds.put(R.id.sort_pages_read_label, Arrays.asList(new Integer[]{R.id.sort_pages_read_asc, R.id.sort_pages_read_desc}));
         sortIds.put(R.id.sort_pages_left_label, Arrays.asList(new Integer[]{R.id.sort_pages_left_asc, R.id.sort_pages_left_desc}));
+    }
+
+    /**
+     * Helper to create and show a popup window with consistent styling and positioning
+     */
+    private PopupWindow createAndShowPopup(View popupView, MenuItem item) {
+        PopupWindow popup = new PopupWindow(popupView, RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT, true);
+        popup.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        popup.setAnimationStyle(android.R.style.Animation_Dialog);
+        
+        float dp = getResources().getDisplayMetrics().density;
+        int xOffset = Math.round(4 * dp);
+        int yOffset = Math.round(30 * dp);
+        
+        if (Utils.isLollipopOrLater()) {
+            yOffset = Math.round(17 * dp) + ((MainActivity) getActivity()).getToolbar().getHeight();
+            popup.setElevation(16);
+        }
+        
+        popup.showAtLocation(getActivity().getWindow().getDecorView(), Gravity.TOP | Gravity.RIGHT, xOffset, yOffset);
+        return popup;
     }
 
     @SuppressLint("RestrictedApi")
@@ -225,19 +230,54 @@ public class LibraryBrowserFragment extends Fragment
             return false;
 
         switch (item.getItemId()) {
-            case R.id.menu_browser_filter_all:
-            case R.id.menu_browser_filter_read:
-            case R.id.menu_browser_filter_unread:
-            case R.id.menu_browser_filter_unfinished:
-            case R.id.menu_browser_filter_reading:
-                item.setChecked(true);
-                // TODO: workaround
-                //  should probably done with xml styles properly
-                //  couldn't find out how though
-                updateColors();
-                mFilterRead = item.getItemId();
-                filterContent();
-                refreshAdapter();
+            case R.id.menu_browser_filter:
+                View filterPopupView = getLayoutInflater().inflate(R.layout.layout_librarybrowser_filter, null);
+                
+                // show header conditionally
+                if (((MenuItemImpl) item).isActionButton()) {
+                    filterPopupView.findViewById(R.id.filter_header).setVisibility(View.GONE);
+                    filterPopupView.findViewById(R.id.filter_header_divider).setVisibility(View.GONE);
+                }
+                
+                @StyleRes int theme = ((MainActivity) getActivity()).getToolbar().getPopupTheme();
+                @ColorInt int normal = Utils.getThemeColor(androidx.appcompat.R.attr.colorControlNormal, theme);
+                @ColorInt int active = Utils.getThemeColor(androidx.appcompat.R.attr.colorControlActivated, theme);
+                
+                // Map filter view IDs to filter values
+                HashMap<Integer, Integer> filterMap = new HashMap<>();
+                filterMap.put(R.id.filter_all, 0);
+                filterMap.put(R.id.filter_read, 1);
+                filterMap.put(R.id.filter_unread, 2);
+                filterMap.put(R.id.filter_unfinished, 3);
+                filterMap.put(R.id.filter_reading, 4);
+                
+                PopupWindow filterPopupWindow = createAndShowPopup(filterPopupView, item);
+                
+                // Wire up click listeners and apply styling
+                for (int viewId : filterMap.keySet()) {
+                    TextView tv = filterPopupView.findViewById(viewId);
+                    int filterValue = filterMap.get(viewId);
+                    
+                    // Apply styling
+                    boolean isActive = (mFilterRead == filterValue);
+                    int color = isActive ? active : normal;
+                    CharSequence text = tv.getText();
+                    SpannableString s = new SpannableString(text);
+                    s.setSpan(new ForegroundColorSpan(color), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    s.setSpan(new StyleSpan(isActive ? Typeface.BOLD : Typeface.NORMAL), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    tv.setText(s);
+                    
+                    // Add click listener
+                    tv.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mFilterRead = filterValue;
+                            filterContent();
+                            refreshAdapter();
+                            filterPopupWindow.dismiss();
+                        }
+                    });
+                }
                 return true;
             case R.id.sort:
                 // apparently you need to implement custom layout submenus yourself
@@ -250,16 +290,24 @@ public class LibraryBrowserFragment extends Fragment
                 // creation time needs java.nio only avail on API26+
                 if (!Utils.isOreoOrLater()) {
                     popupView.findViewById(R.id.sort_creation).setVisibility(View.GONE);
-                    popupView.findViewById(R.id.sort_creation_divider).setVisibility(View.GONE);
                 }
 
-                @StyleRes int theme = ((MainActivity) getActivity()).getToolbar().getPopupTheme();
-                @ColorInt int normal = Utils.getThemeColor(androidx.appcompat.R.attr.colorControlNormal, theme);
-                @ColorInt int active = Utils.getThemeColor(androidx.appcompat.R.attr.colorControlActivated, theme);
+                theme = ((MainActivity) getActivity()).getToolbar().getPopupTheme();
+                normal = Utils.getThemeColor(androidx.appcompat.R.attr.colorControlNormal, theme);
+                active = Utils.getThemeColor(androidx.appcompat.R.attr.colorControlActivated, theme);
 
-                PopupWindow popupWindow = new PopupWindow(popupView, RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT, true);
-                // weirdly needed on preAPI21 to dismiss on tap outside
-                popupWindow.setBackgroundDrawable(new ColorDrawable(androidx.appcompat.R.attr.colorPrimary));
+                PopupWindow popupWindow = createAndShowPopup(popupView, item);
+                
+                // wire up strip noise toggle
+                androidx.appcompat.widget.SwitchCompat stripNoiseToggle = popupView.findViewById(R.id.strip_title_noise_toggle);
+                stripNoiseToggle.setChecked(mStripTitleNoise);
+                stripNoiseToggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                    mStripTitleNoise = isChecked;
+                    MainApplication.getPreferences().edit()
+                            .putBoolean(Constants.SETTINGS_STRIP_TITLE_NOISE, isChecked)
+                            .apply();
+                    refreshAdapter();
+                });
 
                 // add click listener/apply styling according to selected sort mode
                 for (int labelId : sortIds.keySet()) {
@@ -302,21 +350,7 @@ public class LibraryBrowserFragment extends Fragment
                         ImageViewCompat.setImageTintList(iv, ColorStateList.valueOf(tint));
                     }
                 }
-
-                float dp = getResources().getDisplayMetrics().density;
-                // place popup window top right
-                int xOffset, yOffset;
-                // lil space on the right side
-                xOffset = Math.round(4 * dp);
-                // below status bar
-                yOffset = Math.round(30 * dp);
-                // API21+ place submenu popups below status+actionbar
-                if (Utils.isLollipopOrLater()) {
-                    yOffset = Math.round(17 * dp) + ((MainActivity) getActivity()).getToolbar().getHeight();
-                    popupWindow.setElevation(16);
-                }
-                // show at location
-                popupWindow.showAtLocation(getActivity().getWindow().getDecorView(), Gravity.TOP | Gravity.RIGHT, xOffset, yOffset);
+                
                 return true;
         }
 
@@ -352,44 +386,6 @@ public class LibraryBrowserFragment extends Fragment
         refreshAdapter();
     }
 
-    private void updateColors() {
-        if (false) return;
-
-        // fetch styling
-        @StyleRes int theme = ((MainActivity) getActivity()).getToolbar().getPopupTheme();
-        @ColorInt int normal = Utils.getThemeColor(androidx.appcompat.R.attr.colorControlNormal, theme);
-        @ColorInt int active = Utils.getThemeColor(androidx.appcompat.R.attr.colorControlActivated, theme);
-
-        for (int i = 0; mFilterMenu != null && i < mFilterMenu.size(); i++) {
-            MenuItem item = mFilterMenu.getItem(i);
-            if (item.isChecked())
-                styleItem(item, active, true);
-            else
-                styleItem(item, normal, false);
-        }
-
-        for (int i = 0; mSortMenu != null && i < mSortMenu.size(); i++) {
-            MenuItem item = mSortMenu.getItem(i);
-            if (item.isChecked())
-                styleItem(item, active, true);
-            else
-                styleItem(item, normal, false);
-        }
-    }
-
-    // this is a workaround, couldn't find a way to style popup menu item text color/type
-    // depending on selection state
-    private void styleItem(MenuItem item, @ColorInt int colorInt, boolean bold) {
-        if (item == null) return;
-
-        // reset formatting
-        CharSequence text = item.getTitle().toString();
-        SpannableString s = new SpannableString(text);
-        // style away
-        s.setSpan(new ForegroundColorSpan(colorInt), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new StyleSpan(bold ? Typeface.BOLD : Typeface.NORMAL), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        item.setTitle(s);
-    }
 
     @Override
     public boolean onQueryTextChange(String s) {
@@ -417,8 +413,8 @@ public class LibraryBrowserFragment extends Fragment
         intent.putExtra(ReaderFragment.PARAM_HANDLER, comic.getId());
         intent.putExtra(ReaderFragment.PARAM_MODE, ReaderFragment.Mode.MODE_LIBRARY);
         startActivity(intent);
-        // Opening: fade(200, 300, 200) = fade to black 200ms, hold 300ms, fade from black 200ms
-        getActivity().overridePendingTransition(R.anim.fade_from_black_200_delay_300, R.anim.fade_to_black_200);
+        // Opening: fade to black, then fade from black
+        getActivity().overridePendingTransition(R.anim.fade_from_black, R.anim.fade_to_black);
     }
 
     private void refreshAdapter(){
@@ -442,14 +438,15 @@ public class LibraryBrowserFragment extends Fragment
         for (Comic c : mComics) {
             if (mFilterSearch.length() > 0 && !c.getFile().getName().contains(mFilterSearch))
                 continue;
-            if (mFilterRead != R.id.menu_browser_filter_all) {
-                if (mFilterRead == R.id.menu_browser_filter_read && c.getCurrentPage() != c.getTotalPages())
+            // 0=all, 1=read, 2=unread, 3=unfinished, 4=reading
+            if (mFilterRead != 0) {
+                if (mFilterRead == 1 && c.getCurrentPage() != c.getTotalPages())
                     continue;
-                if (mFilterRead == R.id.menu_browser_filter_unread && c.getCurrentPage() != 0)
+                if (mFilterRead == 2 && c.getCurrentPage() != 0)
                     continue;
-                if (mFilterRead == R.id.menu_browser_filter_unfinished && c.getCurrentPage() == c.getTotalPages())
+                if (mFilterRead == 3 && c.getCurrentPage() == c.getTotalPages())
                     continue;
-                if (mFilterRead == R.id.menu_browser_filter_reading &&
+                if (mFilterRead == 4 &&
                         (c.getCurrentPage() == 0 || c.getCurrentPage() == c.getTotalPages()))
                     continue;
             }
@@ -466,12 +463,6 @@ public class LibraryBrowserFragment extends Fragment
             case R.id.sort_name_desc:
                 comparator = Comparator.comparing((Comic c) -> c.getFile().getName(), 
                     String.CASE_INSENSITIVE_ORDER).reversed();
-                break;
-            case R.id.sort_size_asc:
-                comparator = Comparator.comparingLong(c -> getComicSize(c.getFile()));
-                break;
-            case R.id.sort_size_desc:
-                comparator = Comparator.comparingLong((Comic c) -> getComicSize(c.getFile())).reversed();
                 break;
             case R.id.sort_creation_asc:
                 comparator = Comparator.comparingLong(c -> getCreationTime(c.getFile()));
@@ -491,12 +482,12 @@ public class LibraryBrowserFragment extends Fragment
             case R.id.sort_pages_desc:
                 comparator = Comparator.comparingInt(Comic::getTotalPages).reversed();
                 break;
-            case R.id.sort_pages_read_asc:
+            /*case R.id.sort_pages_read_asc:
                 comparator = Comparator.comparingInt(Comic::getCurrentPage);
                 break;
             case R.id.sort_pages_read_desc:
                 comparator = Comparator.comparingInt(Comic::getCurrentPage).reversed();
-                break;
+                break;*/
             case R.id.sort_pages_left_asc:
                 comparator = Comparator.comparingInt(c -> c.getTotalPages() - c.getCurrentPage());
                 break;
@@ -695,7 +686,11 @@ public class LibraryBrowserFragment extends Fragment
 
             // reload comic (in case it was updated by the cover loading)
             comic = Storage.getStorage(getContext()).getComic(comic.getId());
-            mTitleTextView.setText(comic.getFile().getName());
+            String title = comic.getFile().getName();
+            if (mStripTitleNoise) {
+                title = Utils.stripNoiseFromTitle(title);
+            }
+            mTitleTextView.setText(title);
             String totalPages = comic.getTotalPages() < 1 ? "?" : Integer.toString(comic.getTotalPages());
             mPagesTextView.setText(Integer.toString(comic.getCurrentPage()) + '/' + totalPages);
             
