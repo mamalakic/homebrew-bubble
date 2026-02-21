@@ -227,10 +227,28 @@ public class Scanner {
 
                 // leftover storedComics weren't found, let's remove them
                 // unless we were rudely interrupted
+                // only remove comics that are within the scanned folder to preserve progress from other folders
                 if (!mIsStopped)
                     for (Comic missing : storedComics) {
-                        Utils.deleteCoverCacheFile(missing);
-                        storage.removeComic(missing.getId());
+                        File comicFile = missing.getFile();
+                        File comicFolder = comicFile.getParentFile();
+                        // Check if the comic is within the scanned folder
+                        boolean isInScannedFolder = false;
+                        if (comicFolder != null) {
+                            File folder = comicFolder.getAbsoluteFile();
+                            File absBaseFolder = baseFolder.getAbsoluteFile();
+                            do {
+                                if (folder.equals(absBaseFolder)) {
+                                    isInScannedFolder = true;
+                                    break;
+                                }
+                            } while ((folder = folder.getParentFile()) != null);
+                        }
+                        // Only remove if it was in the scanned folder and is now missing
+                        if (isInScannedFolder) {
+                            Utils.deleteCoverCacheFile(missing);
+                            storage.removeComic(missing.getId());
+                        }
                     }
 
                 notifyMediaUpdated();

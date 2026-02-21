@@ -23,6 +23,7 @@
     <string name="menu_browser_filter_unread">Ungelesen</string>
     <string name="menu_browser_filter_unfinished">Nicht beendet</string>
     <string name="menu_browser_context_reset">Reset</string>
+    <string name="menu_browser_context_mark_as_read">Als gelesen markieren</string>
     <string name="drawer_open">Menü öffnen</string>
     <string name="drawer_close">Menü schließen</string>
     <string name="menu_library">Bibliothek</string>

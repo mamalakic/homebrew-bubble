@@ -5,11 +5,13 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="@color/black">
     <FrameLayout
             android:id="@+id/content_frame_reader"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:background="@color/black"
             android:fitsSystemWindows="false"/>
     <RelativeLayout
             android:id="@+id/menu_frame_reader"
@@ -41,52 +43,17 @@
                     android:paddingTop="10dp"
                     android:paddingLeft="10dp"
                     android:paddingRight="10dp">
-                <androidx.constraintlayout.widget.ConstraintLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                    <TextView
-                            android:id="@+id/pageNavTextView"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:paddingLeft="10dp"
-                            android:paddingRight="10dp"
-                            android:gravity="center_horizontal"
-
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toStartOf="@+id/barrier"
-
-                            android:maxLines="1"
-                            android:ellipsize="end"
-                            android:textSize="18sp"
-                            android:text="1222/23003"/>
-
-                    <androidx.constraintlayout.widget.Barrier
-                            android:id="@+id/barrier"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            app:barrierDirection="start"
-                            app:constraint_referenced_ids="pageInfoTextView"/>
-                    <TextView
-                            android:id="@+id/pageInfoTextView"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:minWidth="40dp"
-                            android:minHeight="24dp"
-
-                            app:layout_constraintStart_toEndOf="@+id/barrier"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constrainedWidth="true"
-
-                            android:textSize="12sp"
-                            android:text="dummy info1 dummy info1 dummy info1 dummy info1 dummy info1 dummy info1 dummy info1 dummy info1\ndummy info2\ndummy info3"
-                            android:visibility="gone"
-                            android:gravity="end"
-                            app:layout_constraintHorizontal_bias="1"/>
-
-                </androidx.constraintlayout.widget.ConstraintLayout>
+                <TextView
+                        android:id="@+id/pageNavTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingLeft="10dp"
+                        android:paddingRight="10dp"
+                        android:gravity="center_horizontal"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:textSize="18sp"
+                        android:text="1222/23003"/>
                 <SeekBar
                         android:id="@+id/pageSeekBar"
                         android:layout_width="match_parent"
@@ -99,20 +66,6 @@
                         android:thumbOffset="6dp"
                         android:progressDrawable="@drawable/reader_nav_progress"/>
             </LinearLayout>
-            <ImageButton
-                    android:id="@+id/pageInfoButton"
-                    android:layout_width="40dp"
-                    android:layout_height="35dp"
-                    android:scaleType="fitCenter"
-                    android:paddingLeft="15dp"
-                    android:paddingTop="5dp"
-                    android:paddingRight="5dp"
-                    android:paddingBottom="10dp"
-                    android:layout_alignParentTop="true"
-                    android:layout_alignParentRight="true"
-                    android:background="@android:color/transparent"
-                    android:visibility="visible"
-                    android:src="@drawable/ic_info_24"/>
         </RelativeLayout>
     </RelativeLayout>
 </FrameLayout>

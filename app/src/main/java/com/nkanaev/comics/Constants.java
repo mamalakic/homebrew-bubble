@@ -4,11 +4,8 @@ public class Constants {
     public static final int COVER_THUMBNAIL_HEIGHT = 260;
     public static final int COVER_THUMBNAIL_WIDTH = 260;
 
-    public static final int MIN_RECENT_COUNT = 5;
-
     public static final String SETTINGS_NAME = "SETTINGS_COMICS";
     public static final String SETTINGS_LIBRARY_DIR = "SETTINGS_LIBRARY_DIR";
-    public static final String SETTINGS_THEME = "SETTINGS_THEME";
 
     public static final String SETTINGS_PAGE_VIEW_MODE = "SETTINGS_PAGE_VIEW_MODE";
     public static final String SETTINGS_READING_LEFT_TO_RIGHT = "SETTINGS_READING_LEFT_TO_RIGHT";

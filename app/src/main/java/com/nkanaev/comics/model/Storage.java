@@ -138,6 +138,15 @@ public class Storage {
         addBook(c.getFile(), c.getType(), c.getTotalPages());
     }
 
+    public void markBookAsRead(int comicId) {
+        Comic c = getComic(comicId);
+        // prevent NPE if id does not exist
+        if (c == null)
+            return;
+
+        bookmarkPage(comicId, c.getTotalPages());
+    }
+
     public void removeComic(int comicId) {
         SQLiteDatabase db = mDbHelper.getWritableDatabase();
         String whereClause = Book.COLUMN_NAME_ID + '=' + Integer.toString(comicId);
@@ -145,6 +154,10 @@ public class Storage {
     }
 
     public ArrayList<Comic> listDirectoryComics() {
+        return listDirectoryComics(null);
+    }
+
+    public ArrayList<Comic> listDirectoryComics(String libraryPath) {
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
         Cursor c = db.query(
@@ -166,6 +179,26 @@ public class Storage {
         c.moveToFirst();
         do {
             String filepath = c.getString(c.getColumnIndex(Book.COLUMN_NAME_FILEPATH));
+            
+            // Filter by library path if provided
+            if (libraryPath != null && !libraryPath.isEmpty()) {
+                File comicFile = new File(filepath);
+                File libFile = new File(libraryPath);
+                boolean isInLibrary = false;
+                File folder = comicFile.getAbsoluteFile();
+                File absLibFolder = libFile.getAbsoluteFile();
+                do {
+                    if (folder.equals(absLibFolder)) {
+                        isInLibrary = true;
+                        break;
+                    }
+                } while ((folder = folder.getParentFile()) != null);
+                
+                if (!isInLibrary) {
+                    continue;
+                }
+            }
+            
             // initial entry
             if (!dirComics.containsKey(filepath)) {
                 dirComics.put(filepath,comicFromCursor(c));

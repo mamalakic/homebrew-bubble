@@ -19,6 +19,8 @@
                 android:background="@android:color/transparent"
                 android:visibility="gone"
                 android:src="@drawable/broken"/>
+        <!-- Progress spinner commented out - using fade transitions instead
         <include layout="@layout/progress_image"/>
+        -->
     </RelativeLayout>
 </LinearLayout>

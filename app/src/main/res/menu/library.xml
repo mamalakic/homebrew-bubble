@@ -2,39 +2,10 @@
 
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
       xmlns:app="http://schemas.android.com/apk/res-auto">
-    <item android:id="@+id/menuLibraryRefresh"
-          android:title="@string/reload"
-          android:icon="@drawable/ic_refresh_24"
-          app:showAsAction="always">
-    </item>
     <item android:id="@+id/menuLibrarySort"
           android:title="@string/menu_sort_by"
           android:icon="@drawable/ic_sort_24"
           app:showAsAction="ifRoom">
         <menu/>
-    </item>
-    <item android:id="@+id/menuLibrarySetDir"
-          android:title="@string/directory_picker_header"
-          android:icon="@drawable/ic_folder_24"
-          app:showAsAction="always">
-    </item>
-    <item android:id="@+id/menuLibrarySetTheme"
-          android:title="@string/theme"
-          android:icon="@drawable/ui_system_mode_24"
-          app:showAsAction="never">
-        <menu>
-            <group android:checkableBehavior="single">
-                <item android:id="@+id/menuLibrarySetThemeAuto"
-                      android:icon="@drawable/ui_system_mode_24"
-                      android:title="@string/theme_auto"
-                      android:checked="true"/>
-                <item android:id="@+id/menuLibrarySetThemeDay"
-                      android:icon="@drawable/ui_light_mode_24"
-                      android:title="@string/theme_day"/>
-                <item android:id="@+id/menuLibrarySetThemeNight"
-                      android:icon="@drawable/ui_dark_mode_24"
-                      android:title="@string/theme_night"/>
-            </group>
-        </menu>
     </item>
 </menu>

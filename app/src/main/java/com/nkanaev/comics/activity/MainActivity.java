@@ -157,11 +157,10 @@ public class MainActivity extends AppCompatActivity
         if (subtitle==null)
             return;
 
-        if (title==null||title.toString().isEmpty()) {
-            subtitle.setVisibility(View.GONE);
+        // Always keep subtitle visible to maintain consistent header height
+        subtitle.setVisibility(View.VISIBLE);
+        if (title==null) {
             title="";
-        } else {
-            subtitle.setVisibility(View.VISIBLE);
         }
         subtitle.setText(title);
     }

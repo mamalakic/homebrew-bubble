@@ -16,18 +16,8 @@ public class MainApplication extends MultiDexApplication {
         super.onCreate();
         instance = this;
 
-        // apply them from settings
-        int default_mode = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;
-        int mode = getPreferences().getInt(Constants.SETTINGS_THEME, default_mode);
-        // make extra sure we got a legal mode value
-        switch (mode) {
-            case AppCompatDelegate.MODE_NIGHT_NO:
-            case AppCompatDelegate.MODE_NIGHT_YES:
-                break;
-            default:
-                mode = default_mode;
-        }
-        AppCompatDelegate.setDefaultNightMode(mode);
+        // always use night theme
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
     }
 
     public static Context getAppContext() {

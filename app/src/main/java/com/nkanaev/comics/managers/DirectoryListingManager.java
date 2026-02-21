@@ -41,13 +41,8 @@ public class DirectoryListingManager {
 
         if (comicDir.equals(mLibraryDir)) {
             return "~ (" + comicDir.getName() + ")";
-        } else if (comicDir.getParentFile().equals(mLibraryDir)) {
-            return comicDir.getName();
         } else {
-            File current = comicDir;
-            String dirText = mLibraryDir.toURI().relativize(current.toURI()).getPath();
-            // strip trailing slash(es)
-            return dirText.replaceFirst("/*$", "");
+            return comicDir.getName();
         }
     }
 
