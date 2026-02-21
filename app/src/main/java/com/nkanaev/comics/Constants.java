@@ -12,7 +12,6 @@ public class Constants {
 
     public static final String SETTINGS_LIBRARY_SORT = "SETTINGS_LIBRARY_SORT";
     public static final String SETTINGS_LIBRARY_BROWSER_SORT = "SETTINGS_LIBRARY_BROWSER_SORT";
-    public static final String SETTINGS_STRIP_TITLE_NOISE = "SETTINGS_STRIP_TITLE_NOISE";
 
     public static final int MESSAGE_MEDIA_UPDATE_FINISHED = 0;
     public static final int MESSAGE_MEDIA_UPDATED = 1;
@@ -33,14 +32,14 @@ public class Constants {
         NAME_DESC(1,R.id.sort_name_desc),
         ACCESS_ASC(2,R.id.sort_access_asc),
         ACCESS_DESC(3,R.id.sort_access_desc),
-        //SIZE_ASC(4,R.id.sort_size_asc),
-        //SIZE_DESC(5,R.id.sort_size_desc),
-        //CREATION_ASC(6,R.id.sort_creation_asc),
-        //CREATION_DESC(7,R.id.sort_creation_desc),
+        SIZE_ASC(4,R.id.sort_size_asc),
+        SIZE_DESC(5,R.id.sort_size_desc),
+        CREATION_ASC(6,R.id.sort_creation_asc),
+        CREATION_DESC(7,R.id.sort_creation_desc),
         MODIFIED_ASC(8,R.id.sort_modified_asc),
         MODIFIED_DESC(9,R.id.sort_modified_desc),
-        //PAGES_READ_ASC(10,R.id.sort_pages_read_asc),
-        //PAGES_READ_DESC(11,R.id.sort_pages_read_desc),
+        PAGES_READ_ASC(10,R.id.sort_pages_read_asc),
+        PAGES_READ_DESC(11,R.id.sort_pages_read_desc),
         PAGES_LEFT_ASC(12,R.id.sort_pages_left_asc),
         PAGES_LEFT_DESC(13,R.id.sort_pages_left_desc);
 

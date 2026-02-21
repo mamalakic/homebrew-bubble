@@ -562,31 +562,12 @@ public final class Utils {
     }
 
     public static String removeExtensionIfAny(String fileName) {
-        if (fileName == null || fileName.isEmpty())
+        int i = fileName.lastIndexOf('.');
+        if (i < 1)
             return fileName;
-        
-        String cleaned = fileName.replaceAll("(?i)(\\.(?:cbz|cbr|cb7|cbt|zip|rar|7z|tar|pdf))+$", "");
-        
-        return cleaned.isEmpty() ? fileName : cleaned;
-    }
 
-    public static String stripNoiseFromTitle(String title) {
-        if (title == null)
-            return title;
-        
-        String cleaned = title;
-        cleaned = cleaned.replaceAll("\\[[^\\]]*\\]", "");
-        cleaned = cleaned.replaceAll("\\([^\\)]*\\)", "");
-        cleaned = cleaned.replaceAll("\\{[^\\}]*\\}", "");
-        
-        cleaned = cleaned.replaceAll("\\s+", " ");
-        cleaned = cleaned.replaceAll("\\s+\\.", ".");
-        
-        cleaned = removeExtensionIfAny(cleaned);
-        
-        cleaned = cleaned.trim();
-        
-        return cleaned.isEmpty() ? title : cleaned;
+        String name = fileName.substring(0, i);
+        return name;
     }
 
     public static @ColorInt int getThemeColor(@AttrRes int resid, @StyleRes int themeid){

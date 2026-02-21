@@ -14,11 +14,11 @@
     </style>
 
     <style name="ReaderActivityAnimation" parent="@android:style/Animation.Activity">
-        <!-- fade animations for opening and closing -->
-        <item name="android:activityOpenEnterAnimation">@anim/fade_from_black</item>
-        <item name="android:activityOpenExitAnimation">@anim/fade_to_black</item>
-        <item name="android:activityCloseEnterAnimation">@anim/fade_from_black</item>
-        <item name="android:activityCloseExitAnimation">@anim/fade_to_black</item>
+        <!-- Default fallback animations: fade(200, 300, 200) for opening, fade(150, 150, 150) for closing -->
+        <item name="android:activityOpenEnterAnimation">@anim/fade_from_black_200_delay_300</item>
+        <item name="android:activityOpenExitAnimation">@anim/fade_to_black_200</item>
+        <item name="android:activityCloseEnterAnimation">@anim/fade_from_black_150_delay_150</item>
+        <item name="android:activityCloseExitAnimation">@anim/fade_to_black_150</item>
     </style>
 
     <style name="AppCompatAlertDialogStyle" parent="Theme.AppCompat.Dialog.Alert">
