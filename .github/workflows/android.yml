@@ -20,8 +20,11 @@ jobs:
       run: chmod +x ./gradlew
     - name: Build Release APK
       run: ./gradlew assembleRelease
-    - name: Releasing using Hub
-      uses: sangatdesai/release-apk@main
+    - name: Create Release and Upload APK
+      run: |
+        gh release create ${{ github.ref_name }} \
+          app/build/outputs/apk/release/*.apk \
+          --title "Release ${{ github.ref_name }}" \
+          --generate-notes
       env:
-       GITHUB_TOKEN: ${{ secrets.TOKEN }}
-       APP_FOLDER: app
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
