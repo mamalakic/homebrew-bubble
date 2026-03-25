@@ -44,17 +44,9 @@ Bubble2 is licensed under [GPL-3](https://github.com/edeso/bubble2/blob/master/L
 
 ## Screenshots
 
-![Bubble2 screenshots](https://github.com/edeso/bubble2/blob/master/art/promo.jpg?raw=true)
 <div>
-<img src="https://github.com/edeso/bubble2/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/01.jpg?raw=true" width="49%">
-<img src="https://github.com/edeso/bubble2/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/02.jpg?raw=true" width="49%">
-</div>
-<div>
-<img src="https://github.com/edeso/bubble2/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/03.jpg?raw=true" width="49%">
-<img src="https://github.com/edeso/bubble2/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/04.jpg?raw=true" width="49%">
-</div>
-<div>
-<img src="https://github.com/edeso/bubble2/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/05.jpg?raw=true" width="49%">
+<!-- <img src="https://github.com/edeso/bubble2/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/new_1.jpg?raw=true" width="49%">
+<img src="https://github.com/edeso/bubble2/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/new_2.jpg?raw=true" width="49%"> -->
 </div>
 
 
