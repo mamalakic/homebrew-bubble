@@ -79,6 +79,15 @@ android {
         buildConfig = true
     }
 
+    signingConfigs {
+        release {
+            storeFile file(System.getenv("KEYSTORE_FILE") ?: "release.keystore")
+            storePassword System.getenv("KEYSTORE_PASSWORD")
+            keyAlias System.getenv("KEY_ALIAS")
+            keyPassword System.getenv("KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = '.debug'
@@ -96,6 +105,11 @@ android {
             // Enables resource shrinking, which is performed by the
             // Android Gradle plugin.
             shrinkResources = false
+            
+            // Sign the release APK if keystore is available
+            if (System.getenv("KEYSTORE_PASSWORD")) {
+                signingConfig signingConfigs.release
+            }
         }
     }
     packagingOptions {
