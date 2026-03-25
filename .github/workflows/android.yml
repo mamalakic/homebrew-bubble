@@ -17,7 +17,6 @@ jobs:
       with:
         java-version: 11
     - name: Decode Keystore
-      if: ${{ secrets.KEYSTORE_BASE64 != '' }}
       run: |
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
     - name: Make Gradle executable
