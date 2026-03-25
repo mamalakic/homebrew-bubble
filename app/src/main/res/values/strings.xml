@@ -81,4 +81,15 @@
 
     <string name="library_empty">Your collection seems empty. Click \"folder\" icon to select library directory.</string>
     <string name="warning_missing_file">Missing file. Please update the library</string>
+    
+    <string name="menu_export_history">Export reading history</string>
+    <string name="menu_import_history">Import reading history</string>
+    <string name="export_success">History exported successfully</string>
+    <string name="export_failed">Failed to export history</string>
+    <string name="import_success">Imported %d entries</string>
+    <string name="import_failed">Failed to import history</string>
+    <string name="import_dialog_title">Import Mode</string>
+    <string name="import_dialog_message">Do you want to merge with existing history or replace it?</string>
+    <string name="import_merge">Merge</string>
+    <string name="import_replace">Replace</string>
 </resources>

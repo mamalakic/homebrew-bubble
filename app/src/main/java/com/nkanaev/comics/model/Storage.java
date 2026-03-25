@@ -8,8 +8,15 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.BaseColumns;
 import android.util.Log;
 import com.nkanaev.comics.managers.IgnoreCaseComparator;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -337,5 +344,97 @@ public class Storage {
                 next = candidate;
         }
         return next;
+    }
+
+    public boolean exportToJson(File exportFile) {
+        try {
+            SQLiteDatabase db = mDbHelper.getReadableDatabase();
+            Cursor cursor = db.query(Book.TABLE_NAME, Book.columns, null, null, null, null, null);
+            
+            JSONArray jsonArray = new JSONArray();
+            
+            if (cursor.moveToFirst()) {
+                do {
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.put(Book.COLUMN_NAME_FILEPATH, cursor.getString(cursor.getColumnIndex(Book.COLUMN_NAME_FILEPATH)));
+                    jsonObject.put(Book.COLUMN_NAME_FILENAME, cursor.getString(cursor.getColumnIndex(Book.COLUMN_NAME_FILENAME)));
+                    jsonObject.put(Book.COLUMN_NAME_NUM_PAGES, cursor.getInt(cursor.getColumnIndex(Book.COLUMN_NAME_NUM_PAGES)));
+                    jsonObject.put(Book.COLUMN_NAME_CURRENT_PAGE, cursor.getInt(cursor.getColumnIndex(Book.COLUMN_NAME_CURRENT_PAGE)));
+                    jsonObject.put(Book.COLUMN_NAME_TYPE, cursor.getString(cursor.getColumnIndex(Book.COLUMN_NAME_TYPE)));
+                    jsonObject.put(Book.COLUMN_NAME_UPDATED_AT, cursor.getLong(cursor.getColumnIndex(Book.COLUMN_NAME_UPDATED_AT)));
+                    jsonArray.put(jsonObject);
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+            
+            FileOutputStream fos = new FileOutputStream(exportFile);
+            fos.write(jsonArray.toString(2).getBytes());
+            fos.close();
+            
+            return true;
+        } catch (Exception e) {
+            Log.e("Storage", "Export failed: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public int importFromJson(File importFile, boolean merge) {
+        int importedCount = 0;
+        try {
+            FileInputStream fis = new FileInputStream(importFile);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(fis));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+            reader.close();
+            
+            JSONArray jsonArray = new JSONArray(sb.toString());
+            SQLiteDatabase db = mDbHelper.getWritableDatabase();
+            
+            if (!merge) {
+                db.delete(Book.TABLE_NAME, null, null);
+            }
+            
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+                
+                String filepath = jsonObject.getString(Book.COLUMN_NAME_FILEPATH);
+                String filename = jsonObject.getString(Book.COLUMN_NAME_FILENAME);
+                
+                if (merge) {
+                    ArrayList<Comic> existing = listComics(filepath, filename);
+                    if (!existing.isEmpty()) {
+                        int existingId = existing.get(0).getId();
+                        ContentValues values = new ContentValues();
+                        values.put(Book.COLUMN_NAME_NUM_PAGES, jsonObject.getInt(Book.COLUMN_NAME_NUM_PAGES));
+                        values.put(Book.COLUMN_NAME_CURRENT_PAGE, jsonObject.getInt(Book.COLUMN_NAME_CURRENT_PAGE));
+                        values.put(Book.COLUMN_NAME_TYPE, jsonObject.getString(Book.COLUMN_NAME_TYPE));
+                        values.put(Book.COLUMN_NAME_UPDATED_AT, jsonObject.getLong(Book.COLUMN_NAME_UPDATED_AT));
+                        String whereClause = Book.COLUMN_NAME_ID + '=' + existingId;
+                        db.update(Book.TABLE_NAME, values, whereClause, null);
+                        importedCount++;
+                        continue;
+                    }
+                }
+                
+                ContentValues values = new ContentValues();
+                values.put(Book.COLUMN_NAME_FILEPATH, filepath);
+                values.put(Book.COLUMN_NAME_FILENAME, filename);
+                values.put(Book.COLUMN_NAME_NUM_PAGES, jsonObject.getInt(Book.COLUMN_NAME_NUM_PAGES));
+                values.put(Book.COLUMN_NAME_CURRENT_PAGE, jsonObject.getInt(Book.COLUMN_NAME_CURRENT_PAGE));
+                values.put(Book.COLUMN_NAME_TYPE, jsonObject.getString(Book.COLUMN_NAME_TYPE));
+                values.put(Book.COLUMN_NAME_UPDATED_AT, jsonObject.getLong(Book.COLUMN_NAME_UPDATED_AT));
+                
+                db.insert(Book.TABLE_NAME, null, values);
+                importedCount++;
+            }
+            
+            return importedCount;
+        } catch (Exception e) {
+            Log.e("Storage", "Import failed: " + e.getMessage());
+            return -1;
+        }
     }
 }
