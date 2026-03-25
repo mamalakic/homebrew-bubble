@@ -2,7 +2,9 @@ package com.nkanaev.comics.fragment;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -49,11 +51,14 @@ import com.squareup.picasso.Picasso;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 
 
 public class LibraryFragment extends Fragment
@@ -358,9 +363,87 @@ public class LibraryFragment extends Fragment
                 // show at location
                 popupWindow.showAtLocation(getActivity().getWindow().getDecorView(),Gravity.TOP|Gravity.RIGHT,xOffset,yOffset);
                 return true;
+            case R.id.menuLibraryExport:
+                exportHistory();
+                return true;
+            case R.id.menuLibraryImport:
+                importHistory();
+                return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void exportHistory() {
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
+        String filename = "bubble2_history_" + timestamp + ".json";
+        File exportFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), filename);
+        
+        new Thread(() -> {
+            boolean success = Storage.getStorage(getActivity()).exportToJson(exportFile);
+            getActivity().runOnUiThread(() -> {
+                if (success) {
+                    Toast.makeText(getActivity(), 
+                        getString(R.string.export_success) + "\n" + exportFile.getAbsolutePath(), 
+                        Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(getActivity(), R.string.export_failed, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }).start();
+    }
+
+    private void importHistory() {
+        File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        File[] jsonFiles = downloadsDir.listFiles((dir, name) -> name.startsWith("bubble2_history_") && name.endsWith(".json"));
+        
+        if (jsonFiles == null || jsonFiles.length == 0) {
+            Toast.makeText(getActivity(), "No history files found in Downloads", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        Arrays.sort(jsonFiles, (f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
+        
+        String[] fileNames = new String[jsonFiles.length];
+        for (int i = 0; i < jsonFiles.length; i++) {
+            fileNames[i] = jsonFiles[i].getName();
+        }
+        
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Select history file");
+        builder.setItems(fileNames, (dialog, which) -> {
+            File selectedFile = jsonFiles[which];
+            showImportModeDialog(selectedFile);
+        });
+        builder.setNegativeButton(R.string.alert_action_negative, null);
+        builder.show();
+    }
+
+    private void showImportModeDialog(File importFile) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle(R.string.import_dialog_title);
+        builder.setMessage(R.string.import_dialog_message);
+        builder.setPositiveButton(R.string.import_merge, (dialog, which) -> performImport(importFile, true));
+        builder.setNegativeButton(R.string.import_replace, (dialog, which) -> performImport(importFile, false));
+        builder.setNeutralButton(R.string.alert_action_negative, null);
+        builder.show();
+    }
+
+    private void performImport(File importFile, boolean merge) {
+        new Thread(() -> {
+            int count = Storage.getStorage(getActivity()).importFromJson(importFile, merge);
+            getActivity().runOnUiThread(() -> {
+                if (count >= 0) {
+                    Toast.makeText(getActivity(), 
+                        String.format(getString(R.string.import_success), count), 
+                        Toast.LENGTH_SHORT).show();
+                    getComics();
+                    mFolderListView.getAdapter().notifyDataSetChanged();
+                } else {
+                    Toast.makeText(getActivity(), R.string.import_failed, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }).start();
     }
 
     public void onSortItemSelected(int id) {

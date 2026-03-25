@@ -8,4 +8,10 @@
           app:showAsAction="ifRoom">
         <menu/>
     </item>
+    <item android:id="@+id/menuLibraryExport"
+          android:title="@string/menu_export_history"
+          app:showAsAction="never"/>
+    <item android:id="@+id/menuLibraryImport"
+          android:title="@string/menu_import_history"
+          app:showAsAction="never"/>
 </menu>
